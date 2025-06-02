@@ -59,9 +59,21 @@ class _HomePageState extends State<HomePage> {
           fontSize: 13,
         ),
         titleTextStyle: TextStyle(color: Colors.white, fontSize: 11),
-        iconColor: Colors.white70,
-        leading: Icon(icon),
-        title: Text(title),
+        title: Row(
+          spacing: 8,
+          children: [
+            Icon(icon, size: 15, color: Colors.white70),
+            Flexible(
+              child: Text(
+                title,
+                textAlign: TextAlign.start,
+                maxLines: 2,
+                softWrap: true,
+                overflow: TextOverflow.fade,
+              ),
+            ),
+          ],
+        ),
         trailing: Text(subtitle),
       ),
     );
@@ -87,7 +99,7 @@ class _HomePageState extends State<HomePage> {
       teamStatListItems.add(
         ListTile(
           titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
-          title: Text("Current Team Stats"),
+          title: Text("Team Stats"),
         ),
       );
       teamStatListItems.add(
@@ -350,6 +362,7 @@ class _HomePageState extends State<HomePage> {
                           : Colors.teal.shade900),
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                spacing: 7,
                 children: [
                   Flexible(
                     child: Row(
@@ -363,8 +376,8 @@ class _HomePageState extends State<HomePage> {
                           child: Text(
                             topCTFTeamsList[i]['name'].toString(),
                             textAlign: TextAlign.start,
-                            maxLines: 1,
-                            softWrap: false,
+                            maxLines: 2,
+                            softWrap: true,
                             overflow: TextOverflow.fade,
                           ),
                         ),
@@ -458,7 +471,7 @@ class _HomePageState extends State<HomePage> {
                     flex: 1,
                     child: SizedBox.expand(
                       child: _buildCard(
-                        'Current Team Stats',
+                        'Team Stats',
                         ListView.builder(
                           padding: EdgeInsets.all(5),
                           itemCount: teamStatListItems.length,
@@ -542,31 +555,126 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildAboutPage() {
+    List<ListTile> aboutListItems = [];
+
+    aboutListItems.add(
+      ListTile(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14.0),
+        ),
+        tileColor: Colors.teal.shade900,
+        leading: Icon(Icons.person, size: 25, color: Colors.white70),
+        titleTextStyle: TextStyle(color: Colors.white, fontSize: 16),
+        title: Row(
+          children: [
+            Flexible(
+              child: Text(
+                "Developed by Yadhu Krishna K",
+                textAlign: TextAlign.start,
+                maxLines: 2,
+                softWrap: true,
+                overflow: TextOverflow.fade,
+              ),
+            ),
+          ],
+        ),
+        subtitle: Row(
+          children: [
+            Flexible(
+              child: Text(
+                "@sp3p3x",
+                style: TextStyle(color: Colors.white70),
+                textAlign: TextAlign.start,
+                maxLines: 2,
+                softWrap: true,
+                overflow: TextOverflow.fade,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    aboutListItems.add(
+      ListTile(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14.0),
+        ),
+        tileColor: Colors.teal.shade900,
+        leading: Icon(Icons.code, size: 25, color: Colors.white70),
+        titleTextStyle: TextStyle(color: Colors.white, fontSize: 16),
+        title: Row(
+          children: [
+            Flexible(
+              child: Text(
+                "Github",
+                textAlign: TextAlign.start,
+                maxLines: 2,
+                softWrap: true,
+                overflow: TextOverflow.fade,
+              ),
+            ),
+          ],
+        ),
+        subtitle: Row(
+          children: [
+            Flexible(
+              child: Text(
+                "<url>",
+                style: TextStyle(color: Colors.white70),
+                textAlign: TextAlign.start,
+                maxLines: 2,
+                softWrap: true,
+                overflow: TextOverflow.fade,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    return ListView.builder(
+      padding: EdgeInsets.all(5),
+      itemCount: aboutListItems.length,
+      itemBuilder: (context, index) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 6),
+          child: aboutListItems[index],
+        );
+      },
+    );
+  }
+
   Scaffold _buildPlatformScaffold() {
     List<Widget> pages = <Widget>[
       _buildHomePage(),
-      _buildCTFPointsCalcPage(),
       _buildCTFDetailsPage(),
+      _buildCTFPointsCalcPage(),
+      _buildAboutPage(),
     ];
 
     return Scaffold(
       appBar: AppBar(
         title: Text("bi0s Stats"),
-        actions: [
-          IconButton(
-            onPressed: () {
-              setState(() {
-                isLoading = true;
-              });
-              teamStatListItems.clear();
-              teamTop10ListItems.clear();
-              topCTFTeams.clear();
-              _getStats();
-            },
-            iconSize: 30,
-            icon: Icon(Icons.replay_outlined),
-          ),
-        ],
+        actions:
+            (_selectedIndex == 0)
+                ? [
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        isLoading = true;
+                      });
+                      teamStatListItems.clear();
+                      teamTop10ListItems.clear();
+                      topCTFTeams.clear();
+                      _getStats();
+                    },
+                    iconSize: 30,
+                    icon: Icon(Icons.replay_outlined),
+                  ),
+                ]
+                : [],
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
@@ -576,13 +684,18 @@ class _HomePageState extends State<HomePage> {
             backgroundColor: Colors.teal,
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.flag),
+            label: 'CTF Events',
+            backgroundColor: Colors.teal,
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.calculate),
             label: 'Calculate Points',
             backgroundColor: Colors.teal,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.flag),
-            label: 'CTF Events',
+            icon: Icon(Icons.info),
+            label: 'About',
             backgroundColor: Colors.teal,
           ),
         ],
