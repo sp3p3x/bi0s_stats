@@ -697,8 +697,173 @@ class _HomePageState extends State<HomePage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
+                              Text('Location:'),
+                              Text('${element["location"]}'),
+                            ],
+                          ),
+                        ),
+                        SimpleDialogOption(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Rating:'),
+                              Text('${element["ctfRating"]} pts'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14.0),
+              ),
+              tileColor: Colors.teal.shade900,
+              titleTextStyle: TextStyle(color: Colors.white, fontSize: 16),
+              title: Row(
+                spacing: 8,
+                children: [
+                  Flexible(
+                    child: Text(
+                      element['name'],
+                      textAlign: TextAlign.start,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.fade,
+                    ),
+                  ),
+                ],
+              ),
+              // trailing widget is causing some issue
+              // bloop
+              // trailing: Text('${element['ctfRating']} pts'),
+              subtitle: Text(
+                'Click to Show more!',
+                style: TextStyle(color: Colors.white70, fontSize: 10),
+              ),
+            ),
+          );
+        }
+      }
+
+      // scrape upcoming ctf events
+      if (await webScraper.loadWebPage(
+        '/event/list/?year=2025&online=-1&format=0&restrictions=-1&upcoming=true',
+      )) {
+        List<Map> upcomingCTFList = [];
+
+        for (var element in webScraper.getElement(
+          'div.container > table.table.table-striped > tbody > tr > td > a',
+          ['href'],
+        )) {
+          if (element['title'] != "*" &&
+              (element['attributes']['href'].toString().contains('/event'))) {
+            upcomingCTFList.add({"name": element['title']});
+          }
+        }
+
+        final upcomingCTFDetails = webScraper.getElement(
+          'div.container > table.table.table-striped > tbody > tr > td',
+          [],
+        );
+
+        pos = 0;
+        for (int i = 1; i < upcomingCTFDetails.length; i += 7) {
+          upcomingCTFList[pos]['startDateTime'] =
+              upcomingCTFDetails[i]['title'].split('—')[0];
+          String endDateTime =
+              upcomingCTFDetails[i]['title'].split('—')[1].toString();
+          endDateTime = endDateTime.replaceRange(
+            endDateTime.length - 16,
+            endDateTime.length - 11,
+            '',
+          );
+          upcomingCTFList[pos]['endDateTime'] = endDateTime;
+          upcomingCTFList[pos]['format'] = upcomingCTFDetails[i + 1]['title'];
+          upcomingCTFList[pos]['location'] = upcomingCTFDetails[i + 2]['title']
+              .toString()
+              .replaceAll('\n', '');
+          upcomingCTFList[pos]['ctfRating'] =
+              upcomingCTFDetails[i + 3]['title'];
+          pos++;
+        }
+
+        upcomingCTFListItems.add(
+          ListTile(
+            titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
+            title: Text("Upcoming CTFs"),
+          ),
+        );
+        upcomingCTFListItems.add(
+          const Divider(color: Colors.white, height: 3, thickness: 2),
+        );
+        for (var element in upcomingCTFList) {
+          upcomingCTFListItems.add(
+            ListTile(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return SimpleDialog(
+                      backgroundColor: Colors.teal.shade900,
+                      title: Text(
+                        element['name'].toString(),
+                        textAlign: TextAlign.start,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.fade,
+                      ),
+                      children: <Widget>[
+                        SimpleDialogOption(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text("Started:"),
+                              Flexible(
+                                child: Text(
+                                  element['startDateTime'],
+                                  textAlign: TextAlign.end,
+                                  maxLines: 2,
+                                  softWrap: true,
+                                  overflow: TextOverflow.fade,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SimpleDialogOption(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Ended:'),
+                              Flexible(
+                                child: Text(
+                                  element['endDateTime'],
+                                  textAlign: TextAlign.end,
+                                  maxLines: 2,
+                                  softWrap: true,
+                                  overflow: TextOverflow.fade,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SimpleDialogOption(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
                               Text('Format:'),
-                              Text('${element["format"]}'),
+                              Text(element["format"]),
+                            ],
+                          ),
+                        ),
+                        SimpleDialogOption(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Location:'),
+                              Text('${element["location"]}'),
                             ],
                           ),
                         ),
