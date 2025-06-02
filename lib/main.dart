@@ -251,7 +251,7 @@ class _HomePageState extends State<HomePage> {
         topCTFTeams.add(
           ListTile(
             titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
-            title: Text("Top 50 CTF Teams"),
+            title: Text("Top 50 Teams"),
           ),
         );
         topCTFTeams.add(
@@ -654,7 +654,7 @@ class _HomePageState extends State<HomePage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text("Started:"),
+                              Text("Starts:"),
                               Flexible(
                                 child: Text(
                                   element['startDateTime'],
@@ -671,7 +671,7 @@ class _HomePageState extends State<HomePage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Ended:'),
+                              Text('Ends:'),
                               Flexible(
                                 child: Text(
                                   element['endDateTime'],
@@ -1049,7 +1049,7 @@ class _HomePageState extends State<HomePage> {
             Expanded(
               child: SizedBox.expand(
                 child: _buildStatsCard(
-                  'Top 50 CTF Teams',
+                  'Top 50 Teams',
                   ListView.builder(
                     padding: EdgeInsets.all(5),
                     itemCount: topCTFTeams.length,
