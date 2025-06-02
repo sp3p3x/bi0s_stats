@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:web_scraper/web_scraper.dart';
+import 'package:http/http.dart' as http;
+import 'package:html/parser.dart' as htmlParser;
 import 'dart:io';
 
 void main() {
@@ -36,6 +38,7 @@ class _HomePageState extends State<HomePage> {
   TextEditingController statsController = TextEditingController();
   List<Widget> teamStatListItems = [];
   List<Widget> teamTop10ListItems = [];
+  List<Widget> topCTFTeams = [];
   Widget mainWidget = Center();
   int _selectedIndex = 0;
 
@@ -53,9 +56,9 @@ class _HomePageState extends State<HomePage> {
         tileColor: Colors.teal.shade900,
         leadingAndTrailingTextStyle: TextStyle(
           color: Colors.white,
-          fontSize: 16,
+          fontSize: 13,
         ),
-        titleTextStyle: TextStyle(color: Colors.white60, fontSize: 13),
+        titleTextStyle: TextStyle(color: Colors.white, fontSize: 11),
         iconColor: Colors.white70,
         leading: Icon(icon),
         title: Text(title),
@@ -103,6 +106,7 @@ class _HomePageState extends State<HomePage> {
         countryPosition,
       );
       _addListTile(teamStatListItems, Icons.star, "Team Points", teamPoints);
+      // TODO: add bi0sctf rating
 
       // scrape top 10 scores
       List<Map> allCTFScores = [];
@@ -144,7 +148,7 @@ class _HomePageState extends State<HomePage> {
       teamTop10ListItems.add(
         ListTile(
           titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
-          title: Text("Top 10 Scorings"),
+          title: Text("Top 10 Scores"),
         ),
       );
       teamTop10ListItems.add(
@@ -159,9 +163,9 @@ class _HomePageState extends State<HomePage> {
             tileColor: Colors.teal.shade900,
             leadingAndTrailingTextStyle: TextStyle(
               color: Colors.white,
-              fontSize: 16,
+              fontSize: 13,
             ),
-            titleTextStyle: TextStyle(color: Colors.white60, fontSize: 13),
+            titleTextStyle: TextStyle(color: Colors.white70, fontSize: 11),
             iconColor: Colors.white70,
             title: Text(allCTFScores[i]['ctf']),
             trailing: Text(allCTFScores[i]['points'].toString()),
@@ -169,14 +173,231 @@ class _HomePageState extends State<HomePage> {
         );
       }
 
-      setState(() {
-        isLoading = false;
-      });
-    } else {
-      teamStatListItems.add(const Text('Cannot load URL!'));
-      setState(() {
-        isLoading = false;
-      });
+      // scrape top ctf teams
+
+      if (await webScraper.loadWebPage('/stats/')) {
+        List<Map> topCTFTeamsList = [];
+
+        List teamNames = webScraper.getElement(
+          'div.container > table.table.table-striped > tbody > tr > td > a',
+          [],
+        );
+        int pos = 1;
+        for (int i = 0; i < teamNames.length; i++) {
+          if (teamNames[i]['title'] != '') {
+            topCTFTeamsList.add({"pos": pos, "name": teamNames[i]['title']});
+            pos++;
+          }
+        }
+
+        // since web_scraper lib doesnt have a way to scrap stuff with
+        // inconsistent child tags, we resort to ooga booga methods...
+        List<String> countries = [];
+        try {
+          final response = await http.get(
+            Uri.parse('https://ctftime.org/stats/'),
+          );
+
+          if (response.statusCode == 200) {
+            final document = htmlParser.parse(response.body);
+            final countryElements = document.getElementsByClassName('country');
+            for (var country in countryElements) {
+              countries.add(
+                country.children.isNotEmpty
+                    ? country.children[0].attributes['href'].toString().split(
+                      '/',
+                    )[3]
+                    : '-',
+              );
+            }
+          } else {
+            for (int i = 0; i < 50; i++) {
+              countries.add('?');
+            }
+          }
+        } catch (e) {
+          for (int i = 0; i < 50; i++) {
+            countries.add('?');
+          }
+        }
+
+        List teamPoints = webScraper.getElement(
+          'div.container > table.table.table-striped > tbody > tr > td',
+          [],
+        );
+        pos = 0;
+        for (int i = 4; i < teamPoints.length; i += 6) {
+          topCTFTeamsList[pos]["points"] = teamPoints[i]['title'];
+          pos++;
+        }
+
+        topCTFTeams.add(
+          ListTile(
+            titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
+            title: Text("Top 50 CTF Teams"),
+          ),
+        );
+        topCTFTeams.add(
+          const Divider(color: Colors.white, height: 3, thickness: 2),
+        );
+
+        // i dont really see the need for a index bar (or im too lazy to make it responsive)
+        // but a temp one is here in case...
+
+        // topCTFTeams.add(
+        //   Padding(
+        //     padding: EdgeInsets.only(left: 8, right: 25),
+        //     child: Row(
+        //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        //       children: [
+        //         Flexible(
+        //           child: Row(
+        //             spacing: 6,
+        //             children: [
+        //               Text('Pos'),
+        //               Flexible(
+        //                 child: Text(
+        //                   "Name",
+        //                   textAlign: TextAlign.start,
+        //                   maxLines: 1,
+        //                   softWrap: false,
+        //                   overflow: TextOverflow.fade,
+        //                 ),
+        //               ),
+        //             ],
+        //           ),
+        //         ),
+        //         Flexible(
+        //           child: Row(
+        //             spacing: 15,
+        //             children: [
+        //               Flexible(
+        //                 child: Text(
+        //                   "Country",
+        //                   textAlign: TextAlign.start,
+        //                   maxLines: 1,
+        //                   softWrap: false,
+        //                   overflow: TextOverflow.fade,
+        //                 ),
+        //               ),
+        //               Text("Points"),
+        //             ],
+        //           ),
+        //         ),
+        //       ],
+        //     ),
+        //   ),
+        // );
+
+        for (int i = 0; i < topCTFTeamsList.length; i++) {
+          topCTFTeams.add(
+            ListTile(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return SimpleDialog(
+                      backgroundColor:
+                          (topCTFTeamsList[i]['name'] == 'bi0s')
+                              ? Colors.teal
+                              : ((countries[i] == 'IN')
+                                  ? Colors.lightGreen.shade800
+                                  : Colors.teal.shade900),
+                      title: Text(
+                        topCTFTeamsList[i]['name'].toString(),
+                        textAlign: TextAlign.start,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.fade,
+                      ),
+                      children: <Widget>[
+                        SimpleDialogOption(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [Text('Position:'), Text('$i')],
+                          ),
+                        ),
+                        SimpleDialogOption(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [Text('Country:'), Text(countries[i])],
+                          ),
+                        ),
+                        SimpleDialogOption(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Points:'),
+                              Text('${topCTFTeamsList[i]["points"]}'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14.0),
+              ),
+              leadingAndTrailingTextStyle: TextStyle(fontSize: 12),
+              titleTextStyle: TextStyle(fontSize: 12),
+              tileColor:
+                  (topCTFTeamsList[i]['name'] == 'bi0s')
+                      ? Colors.teal
+                      : ((countries[i] == 'IN')
+                          ? Colors.lightGreen.shade800
+                          : Colors.teal.shade900),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Row(
+                      spacing: 6,
+                      children: [
+                        Text(
+                          topCTFTeamsList[i]['pos'].toString(),
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                        Flexible(
+                          child: Text(
+                            topCTFTeamsList[i]['name'].toString(),
+                            textAlign: TextAlign.start,
+                            maxLines: 1,
+                            softWrap: false,
+                            overflow: TextOverflow.fade,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    spacing: 10,
+                    children: [
+                      Text(
+                        countries[i],
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      Text(topCTFTeamsList[i]['points'].toString()),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        setState(() {
+          isLoading = false;
+        });
+      } else {
+        teamStatListItems.add(const Text('Cannot load URL!'));
+        teamTop10ListItems.add(const Text('Cannot load URL!'));
+        topCTFTeams.add(const Text('Cannot load URL!'));
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -255,7 +476,7 @@ class _HomePageState extends State<HomePage> {
                     flex: 2,
                     child: SizedBox.expand(
                       child: _buildCard(
-                        'Top 10 Scorings',
+                        'Top 10 Scores',
                         ListView.builder(
                           padding: EdgeInsets.all(5),
                           itemCount: teamTop10ListItems.length,
@@ -272,7 +493,23 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
-            Expanded(child: _buildCard('Todo', Text('Todo'))),
+            Expanded(
+              child: SizedBox.expand(
+                child: _buildCard(
+                  'Top 50 CTF Teams',
+                  ListView.builder(
+                    padding: EdgeInsets.all(5),
+                    itemCount: topCTFTeams.length,
+                    itemBuilder: (context, index) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        child: topCTFTeams[index],
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -292,28 +529,44 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildCTFDetailsPage() {
+    return Center(
+      child: Column(
+        children: [
+          Expanded(
+            flex: 1,
+            child: SizedBox.expand(child: Center(child: Text('To Do'))),
+          ),
+        ],
+      ),
+    );
+  }
+
   Scaffold _buildPlatformScaffold() {
-    List<Widget> pages = <Widget>[_buildHomePage(), _buildCTFPointsCalcPage()];
+    List<Widget> pages = <Widget>[
+      _buildHomePage(),
+      _buildCTFPointsCalcPage(),
+      _buildCTFDetailsPage(),
+    ];
 
     return Scaffold(
       appBar: AppBar(
         title: Text("bi0s Stats"),
-        actions:
-            !(Platform.isAndroid || Platform.isIOS) && (_selectedIndex == 0)
-                ? [
-                  IconButton(
-                    onPressed: () {
-                      setState(() {
-                        isLoading = true;
-                      });
-                      teamStatListItems.clear();
-                      _getStats();
-                    },
-                    iconSize: 30,
-                    icon: Icon(Icons.replay_outlined),
-                  ),
-                ]
-                : [],
+        actions: [
+          IconButton(
+            onPressed: () {
+              setState(() {
+                isLoading = true;
+              });
+              teamStatListItems.clear();
+              teamTop10ListItems.clear();
+              topCTFTeams.clear();
+              _getStats();
+            },
+            iconSize: 30,
+            icon: Icon(Icons.replay_outlined),
+          ),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
@@ -327,6 +580,11 @@ class _HomePageState extends State<HomePage> {
             label: 'Calculate Points',
             backgroundColor: Colors.teal,
           ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.flag),
+            label: 'CTF Events',
+            backgroundColor: Colors.teal,
+          ),
         ],
         type: BottomNavigationBarType.shifting,
         currentIndex: _selectedIndex,
@@ -334,19 +592,7 @@ class _HomePageState extends State<HomePage> {
         unselectedItemColor: Theme.of(context).colorScheme.tertiary,
         onTap: _onItemTapped,
       ),
-      body:
-          (Platform.isAndroid || Platform.isIOS)
-              ? RefreshIndicator(
-                onRefresh: () async {
-                  setState(() {
-                    isLoading = true;
-                  });
-                  teamStatListItems.clear();
-                  _getStats();
-                },
-                child: Center(child: pages.elementAt(_selectedIndex)),
-              )
-              : Center(child: pages.elementAt(_selectedIndex)),
+      body: Center(child: pages.elementAt(_selectedIndex)),
     );
   }
 
