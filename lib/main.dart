@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:web_scraper/web_scraper.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as htmlParser;
-import 'dart:io';
 
 void main() {
   runApp(const Bi0sStatsApp());
@@ -34,13 +33,19 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool isLoading = true;
   TextEditingController statsController = TextEditingController();
+  Widget mainWidget = Center();
+  int _selectedIndex = 0;
+  bool isStatsPageLoading = true;
+  bool isCTFDetailsPageLoading = true;
+
   List<Widget> teamStatListItems = [];
   List<Widget> teamTop10ListItems = [];
   List<Widget> topCTFTeams = [];
-  Widget mainWidget = Center();
-  int _selectedIndex = 0;
+
+  List<Widget> nowRunningCTFListItems = [];
+  List<Widget> pastCTFListItems = [];
+  List<Widget> upcomingCTFListItems = [];
 
   _addListTile(
     List<Widget> list,
@@ -140,14 +145,14 @@ class _HomePageState extends State<HomePage> {
         allCTFScores[i]["ctf"] = ctfNameData[i]['title'];
       }
 
-      List _tempRatingPoints = webScraper.getElement(
+      List tempRatingPoints = webScraper.getElement(
         'div.container > div.tab-content > div.active > table.table.table-striped > tbody > tr > td',
         [],
       );
       List<double> ratingPoints = [];
-      for (int i = 4; i < _tempRatingPoints.length; i += 5) {
+      for (int i = 4; i < tempRatingPoints.length; i += 5) {
         try {
-          ratingPoints.add(double.parse(_tempRatingPoints[i]['title']));
+          ratingPoints.add(double.parse(tempRatingPoints[i]['title']));
         } catch (e) {}
       }
       for (int i = 0; i < allCTFScores.length; i++) {
@@ -401,20 +406,88 @@ class _HomePageState extends State<HomePage> {
         }
 
         setState(() {
-          isLoading = false;
+          isStatsPageLoading = false;
         });
       } else {
         teamStatListItems.add(const Text('Cannot load URL!'));
         teamTop10ListItems.add(const Text('Cannot load URL!'));
         topCTFTeams.add(const Text('Cannot load URL!'));
         setState(() {
-          isLoading = false;
+          isStatsPageLoading = false;
         });
       }
     }
   }
 
-  Widget _buildCard(String title, Widget child) {
+  _getCTFDetails() async {
+    final webScraper = WebScraper('https://ctftime.org');
+    if (await webScraper.loadWebPage(
+      '/event/list/?year=2025&online=-1&format=0&restrictions=-1&now=true',
+    )) {
+      // scrapte now running ctfs
+      List<Map> activeCTFList = [];
+      for (var element in webScraper.getElement(
+        'div.container > table.table.table-striped > tbody > tr > td > a',
+        [],
+      )) {
+        activeCTFList.add({"name": element['title']});
+      }
+
+      nowRunningCTFListItems.add(
+        ListTile(
+          titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
+          title: Text("Now Running"),
+        ),
+      );
+      nowRunningCTFListItems.add(
+        const Divider(color: Colors.white, height: 3, thickness: 2),
+      );
+      for (var element in activeCTFList) {
+        nowRunningCTFListItems.add(
+          ListTile(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14.0),
+            ),
+            tileColor: Colors.teal.shade900,
+            titleTextStyle: TextStyle(color: Colors.white, fontSize: 14),
+            title: Row(
+              spacing: 8,
+              children: [
+                Flexible(
+                  child: Text(
+                    element['name'],
+                    textAlign: TextAlign.start,
+                    maxLines: 2,
+                    softWrap: true,
+                    overflow: TextOverflow.fade,
+                  ),
+                ),
+              ],
+            ),
+            trailing: Text(
+              'Click to Show more!',
+              style: TextStyle(color: Colors.white, fontSize: 10),
+            ),
+          ),
+        );
+      }
+
+      print(activeCTFList);
+
+      setState(() {
+        isCTFDetailsPageLoading = false;
+      });
+    } else {
+      nowRunningCTFListItems.add(const Text('Cannot load URL!'));
+      pastCTFListItems.add(const Text('Cannot load URL!'));
+      upcomingCTFListItems.add(const Text('Cannot load URL!'));
+      setState(() {
+        isCTFDetailsPageLoading = false;
+      });
+    }
+  }
+
+  Widget _buildStatsCard(String title, Widget child) {
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14.0),
@@ -426,7 +499,42 @@ class _HomePageState extends State<HomePage> {
       shadowColor: Colors.white,
       elevation: 3,
       child:
-          isLoading
+          isStatsPageLoading
+              ? ListView(
+                children: [
+                  ListTile(
+                    titleTextStyle: TextStyle(
+                      color: Colors.white,
+                      fontSize: 23,
+                    ),
+                    title: Text(title),
+                  ),
+                  const Divider(color: Colors.white, height: 3, thickness: 2),
+                  const Divider(
+                    color: Colors.transparent,
+                    height: 10,
+                    thickness: 0,
+                  ),
+                  Center(child: CircularProgressIndicator(color: Colors.white)),
+                ],
+              )
+              : child,
+    );
+  }
+
+  Widget _buildCTFDetailsCard(String title, Widget child) {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14.0),
+        side: BorderSide(
+          width: 3,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      ),
+      shadowColor: Colors.white,
+      elevation: 3,
+      child:
+          isCTFDetailsPageLoading
               ? ListView(
                 children: [
                   ListTile(
@@ -470,7 +578,7 @@ class _HomePageState extends State<HomePage> {
                   Expanded(
                     flex: 1,
                     child: SizedBox.expand(
-                      child: _buildCard(
+                      child: _buildStatsCard(
                         'Team Stats',
                         ListView.builder(
                           padding: EdgeInsets.all(5),
@@ -488,7 +596,7 @@ class _HomePageState extends State<HomePage> {
                   Expanded(
                     flex: 2,
                     child: SizedBox.expand(
-                      child: _buildCard(
+                      child: _buildStatsCard(
                         'Top 10 Scores',
                         ListView.builder(
                           padding: EdgeInsets.all(5),
@@ -508,7 +616,7 @@ class _HomePageState extends State<HomePage> {
             ),
             Expanded(
               child: SizedBox.expand(
-                child: _buildCard(
+                child: _buildStatsCard(
                   'Top 50 CTF Teams',
                   ListView.builder(
                     padding: EdgeInsets.all(5),
@@ -529,20 +637,79 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildCTFPointsCalcPage() {
-    return Center(
-      child: Column(
-        children: [
-          Expanded(
-            flex: 1,
-            child: SizedBox.expand(child: Center(child: Text('To Do'))),
-          ),
-        ],
+  Widget _buildCTFDetailsPage() {
+    return Padding(
+      padding: EdgeInsets.all(6),
+      child: Center(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 6,
+          children: [
+            Expanded(
+              child: Column(
+                spacing: 6,
+                children: [
+                  Expanded(
+                    child: SizedBox.expand(
+                      child: _buildCTFDetailsCard(
+                        'Now Running',
+                        ListView.builder(
+                          padding: EdgeInsets.all(5),
+                          itemCount: nowRunningCTFListItems.length,
+                          itemBuilder: (context, index) {
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 6),
+                              child: nowRunningCTFListItems[index],
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: SizedBox.expand(
+                      child: _buildCTFDetailsCard(
+                        'Past CTFs',
+                        ListView.builder(
+                          padding: EdgeInsets.all(5),
+                          itemCount: pastCTFListItems.length,
+                          itemBuilder: (context, index) {
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 6),
+                              child: pastCTFListItems[index],
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SizedBox.expand(
+                child: _buildCTFDetailsCard(
+                  'Upcoming CTFs',
+                  ListView.builder(
+                    padding: EdgeInsets.all(5),
+                    itemCount: upcomingCTFListItems.length,
+                    itemBuilder: (context, index) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        child: upcomingCTFListItems[index],
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildCTFDetailsPage() {
+  Widget _buildCTFPointsCalcPage() {
     return Center(
       child: Column(
         children: [
@@ -663,12 +830,29 @@ class _HomePageState extends State<HomePage> {
                   IconButton(
                     onPressed: () {
                       setState(() {
-                        isLoading = true;
+                        isStatsPageLoading = true;
                       });
                       teamStatListItems.clear();
                       teamTop10ListItems.clear();
                       topCTFTeams.clear();
                       _getStats();
+                    },
+                    iconSize: 30,
+                    icon: Icon(Icons.replay_outlined),
+                  ),
+                ]
+                : (_selectedIndex == 1)
+                ? [
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        isCTFDetailsPageLoading = true;
+                      });
+
+                      nowRunningCTFListItems.clear();
+                      pastCTFListItems.clear();
+                      upcomingCTFListItems.clear();
+                      _getCTFDetails();
                     },
                     iconSize: 30,
                     icon: Icon(Icons.replay_outlined),
@@ -712,6 +896,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     _getStats();
+    _getCTFDetails();
     super.initState();
   }
 
