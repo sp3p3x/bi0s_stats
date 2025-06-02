@@ -424,13 +424,37 @@ class _HomePageState extends State<HomePage> {
     if (await webScraper.loadWebPage(
       '/event/list/?year=2025&online=-1&format=0&restrictions=-1&now=true',
     )) {
-      // scrapte now running ctfs
+      // scrape now running ctfs
       List<Map> activeCTFList = [];
       for (var element in webScraper.getElement(
         'div.container > table.table.table-striped > tbody > tr > td > a',
         [],
       )) {
         activeCTFList.add({"name": element['title']});
+      }
+
+      final ctfDetails = webScraper.getElement(
+        'div.container > table.table.table-striped > tbody > tr > td',
+        [],
+      );
+
+      int pos = 0;
+      for (int i = 1; i < ctfDetails.length; i += 7) {
+        activeCTFList[pos]['startDateTime'] =
+            ctfDetails[i]['title'].split('—')[0];
+        String endDateTime = ctfDetails[i]['title'].split('—')[1].toString();
+        endDateTime = endDateTime.replaceRange(
+          endDateTime.length - 16,
+          endDateTime.length - 11,
+          '',
+        );
+        activeCTFList[pos]['endDateTime'] = endDateTime;
+        activeCTFList[pos]['format'] = ctfDetails[i + 1]['title'];
+        activeCTFList[pos]['location'] = ctfDetails[i + 2]['title']
+            .toString()
+            .replaceAll('\n', '');
+        activeCTFList[pos]['ctfRating'] = ctfDetails[i + 3]['title'];
+        pos++;
       }
 
       nowRunningCTFListItems.add(
@@ -445,11 +469,88 @@ class _HomePageState extends State<HomePage> {
       for (var element in activeCTFList) {
         nowRunningCTFListItems.add(
           ListTile(
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return SimpleDialog(
+                    backgroundColor: Colors.teal.shade900,
+                    title: Text(
+                      element['name'].toString(),
+                      textAlign: TextAlign.start,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.fade,
+                    ),
+                    children: <Widget>[
+                      SimpleDialogOption(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("Started:"),
+                            Flexible(
+                              child: Text(
+                                element['startDateTime'],
+                                textAlign: TextAlign.end,
+                                maxLines: 2,
+                                softWrap: true,
+                                overflow: TextOverflow.fade,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SimpleDialogOption(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Ends:'),
+                            Flexible(
+                              child: Text(
+                                element['endDateTime'],
+                                textAlign: TextAlign.end,
+                                maxLines: 2,
+                                softWrap: true,
+                                overflow: TextOverflow.fade,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SimpleDialogOption(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [Text('Format:'), Text(element["format"])],
+                        ),
+                      ),
+                      SimpleDialogOption(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Format:'),
+                            Text('${element["format"]}'),
+                          ],
+                        ),
+                      ),
+                      SimpleDialogOption(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Rating:'),
+                            Text('${element["ctfRating"]} pts'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14.0),
             ),
             tileColor: Colors.teal.shade900,
-            titleTextStyle: TextStyle(color: Colors.white, fontSize: 14),
+            titleTextStyle: TextStyle(color: Colors.white, fontSize: 16),
             title: Row(
               spacing: 8,
               children: [
@@ -457,22 +558,194 @@ class _HomePageState extends State<HomePage> {
                   child: Text(
                     element['name'],
                     textAlign: TextAlign.start,
-                    maxLines: 2,
-                    softWrap: true,
+                    maxLines: 1,
+                    softWrap: false,
                     overflow: TextOverflow.fade,
                   ),
                 ),
               ],
             ),
-            trailing: Text(
+            // trailing widget is causing some issue
+            // bloop
+            // trailing: Text('${element['ctfRating']} pts'),
+            subtitle: Text(
               'Click to Show more!',
-              style: TextStyle(color: Colors.white, fontSize: 10),
+              style: TextStyle(color: Colors.white70, fontSize: 10),
             ),
           ),
         );
       }
 
-      print(activeCTFList);
+      // scrape past ctf events
+      if (await webScraper.loadWebPage(
+        '/event/list/?year=2025&online=-1&format=0&restrictions=-1&archive=true',
+      )) {
+        List<Map> pastCTFList = [];
+
+        int pos = 0;
+        for (var element in webScraper.getElement(
+          'div.container > table.table.table-striped > tbody > tr > td > a',
+          ['href'],
+        )) {
+          if (element['title'] != "*" &&
+              (element['attributes']['href'].toString().contains('/event')) &&
+              pos < 10) {
+            pastCTFList.add({"name": element['title']});
+            pos++;
+          }
+        }
+
+        final pastCTFDetails = webScraper.getElement(
+          'div.container > table.table.table-striped > tbody > tr > td',
+          [],
+        );
+
+        pos = 0;
+        for (int i = 1; i < pastCTFDetails.length; i += 7) {
+          if (pos == pastCTFList.length) {
+            break;
+          } else {
+            pastCTFList[pos]['startDateTime'] =
+                pastCTFDetails[i]['title'].split('—')[0];
+            String endDateTime =
+                pastCTFDetails[i]['title'].split('—')[1].toString();
+            endDateTime = endDateTime.replaceRange(
+              endDateTime.length - 16,
+              endDateTime.length - 11,
+              '',
+            );
+            pastCTFList[pos]['endDateTime'] = endDateTime;
+            pastCTFList[pos]['format'] = pastCTFDetails[i + 1]['title'];
+            pastCTFList[pos]['location'] = pastCTFDetails[i + 2]['title']
+                .toString()
+                .replaceAll('\n', '');
+            pastCTFList[pos]['ctfRating'] = pastCTFDetails[i + 3]['title'];
+            pos++;
+          }
+        }
+
+        pastCTFListItems.add(
+          ListTile(
+            titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
+            title: Text("Past 10 CTFs"),
+          ),
+        );
+        pastCTFListItems.add(
+          const Divider(color: Colors.white, height: 3, thickness: 2),
+        );
+        for (var element in pastCTFList) {
+          pastCTFListItems.add(
+            ListTile(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return SimpleDialog(
+                      backgroundColor: Colors.teal.shade900,
+                      title: Text(
+                        element['name'].toString(),
+                        textAlign: TextAlign.start,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.fade,
+                      ),
+                      children: <Widget>[
+                        SimpleDialogOption(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text("Started:"),
+                              Flexible(
+                                child: Text(
+                                  element['startDateTime'],
+                                  textAlign: TextAlign.end,
+                                  maxLines: 2,
+                                  softWrap: true,
+                                  overflow: TextOverflow.fade,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SimpleDialogOption(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Ended:'),
+                              Flexible(
+                                child: Text(
+                                  element['endDateTime'],
+                                  textAlign: TextAlign.end,
+                                  maxLines: 2,
+                                  softWrap: true,
+                                  overflow: TextOverflow.fade,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SimpleDialogOption(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Format:'),
+                              Text(element["format"]),
+                            ],
+                          ),
+                        ),
+                        SimpleDialogOption(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Format:'),
+                              Text('${element["format"]}'),
+                            ],
+                          ),
+                        ),
+                        SimpleDialogOption(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Rating:'),
+                              Text('${element["ctfRating"]} pts'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14.0),
+              ),
+              tileColor: Colors.teal.shade900,
+              titleTextStyle: TextStyle(color: Colors.white, fontSize: 16),
+              title: Row(
+                spacing: 8,
+                children: [
+                  Flexible(
+                    child: Text(
+                      element['name'],
+                      textAlign: TextAlign.start,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.fade,
+                    ),
+                  ),
+                ],
+              ),
+              // trailing widget is causing some issue
+              // bloop
+              // trailing: Text('${element['ctfRating']} pts'),
+              subtitle: Text(
+                'Click to Show more!',
+                style: TextStyle(color: Colors.white70, fontSize: 10),
+              ),
+            ),
+          );
+        }
+      }
 
       setState(() {
         isCTFDetailsPageLoading = false;
@@ -555,12 +828,6 @@ class _HomePageState extends State<HomePage> {
               )
               : child,
     );
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
   }
 
   Widget _buildHomePage() {
@@ -669,7 +936,7 @@ class _HomePageState extends State<HomePage> {
                   Expanded(
                     child: SizedBox.expand(
                       child: _buildCTFDetailsCard(
-                        'Past CTFs',
+                        'Past 10 CTFs',
                         ListView.builder(
                           padding: EdgeInsets.all(5),
                           itemCount: pastCTFListItems.length,
@@ -891,6 +1158,12 @@ class _HomePageState extends State<HomePage> {
       ),
       body: Center(child: pages.elementAt(_selectedIndex)),
     );
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
   }
 
   @override
