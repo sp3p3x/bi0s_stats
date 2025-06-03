@@ -995,6 +995,41 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildCalcPointsCard(String title, Widget child) {
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14.0),
+        side: BorderSide(
+          width: 3,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      ),
+      shadowColor: Colors.white,
+      elevation: 3,
+      child:
+          isStatsPageLoading
+              ? ListView(
+                children: [
+                  ListTile(
+                    titleTextStyle: TextStyle(
+                      color: Colors.white,
+                      fontSize: 23,
+                    ),
+                    title: Text(title),
+                  ),
+                  const Divider(color: Colors.white, height: 3, thickness: 2),
+                  const Divider(
+                    color: Colors.transparent,
+                    height: 10,
+                    thickness: 0,
+                  ),
+                  Center(child: CircularProgressIndicator(color: Colors.white)),
+                ],
+              )
+              : child,
+    );
+  }
+
   Widget _buildHomePage() {
     return Padding(
       padding: EdgeInsets.all(6),
@@ -1141,15 +1176,345 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  final List<String> ongoingCTFList = [
+    'Option 1',
+    'Option 2',
+    'Option 3',
+    'Option 4',
+  ];
+  String? selectedItem;
+
   Widget _buildCTFPointsCalcPage() {
-    return Center(
-      child: Column(
-        children: [
-          Expanded(
-            flex: 1,
-            child: SizedBox.expand(child: Center(child: Text('To Do'))),
+    final formKey = GlobalKey<FormState>();
+    final teamRankController = TextEditingController();
+    final teamPointsController = TextEditingController();
+    final bestPointsController = TextEditingController();
+    final weightController = TextEditingController();
+    final totalTeamsController = TextEditingController();
+
+    // @override
+    // void dispose() {
+    //   controller.dispose();
+    //   super.dispose();
+    // }
+
+    calcctftimerating(teamRank, teamPoints, bestPoints, weight, totalTeams) {
+      try {
+        final pointsCoef = teamPoints / bestPoints;
+        final placeCoef = 1 / teamRank;
+        if (pointsCoef > 0) {
+          final rating =
+              ((pointsCoef + placeCoef) * weight) /
+              (1 / (1 + teamRank / totalTeams));
+          return rating;
+        }
+      } catch (e) {
+        return 'Invalid Values Provided!';
+      }
+    }
+
+    void submitPointsCalcForm() {
+      if (formKey.currentState!.validate()) {
+        final pointsRecieved = calcctftimerating(
+          double.parse(teamRankController.text),
+          double.parse(teamPointsController.text),
+          double.parse(bestPointsController.text),
+          double.parse(weightController.text),
+          double.parse(totalTeamsController.text),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Team will recieve: ${pointsRecieved.toStringAsFixed(3)} pts!',
+            ),
           ),
-        ],
+        );
+      }
+    }
+
+    void estimateRankingsAndStats() {
+      if (formKey.currentState!.validate()) {
+        final pointsRecieved = calcctftimerating(
+          double.parse(teamRankController.text),
+          double.parse(teamPointsController.text),
+          double.parse(bestPointsController.text),
+          double.parse(weightController.text),
+          double.parse(totalTeamsController.text),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Team will recieve: ${pointsRecieved.toStringAsFixed(3)} pts!',
+            ),
+          ),
+        );
+      }
+    }
+
+    Form calcForm = Form(
+      key: formKey,
+      child: Padding(
+        padding: EdgeInsets.all(5),
+        child: Column(
+          spacing: 7,
+          children: [
+            Row(
+              children: [
+                Flexible(
+                  child: TextFormField(
+                    controller: teamRankController,
+                    // textInputAction: TextInputAction.next,
+                    // onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                    decoration: InputDecoration(
+                      labelText: 'Team Rank',
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Colors.greenAccent,
+                          width: 5.0,
+                        ),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null ||
+                          value.isEmpty ||
+                          (double.tryParse(value) == null) ||
+                          (double.tryParse(value) == null)) {
+                        return 'Please enter a number!';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Flexible(
+                  child: TextFormField(
+                    controller: totalTeamsController,
+                    // textInputAction: TextInputAction.next,
+                    // onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                    decoration: InputDecoration(
+                      labelText: 'Total Teams',
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Colors.greenAccent,
+                          width: 5.0,
+                        ),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null ||
+                          value.isEmpty ||
+                          (double.tryParse(value) == null)) {
+                        return 'Please enter a number!';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Flexible(
+                  child: TextFormField(
+                    controller: teamPointsController,
+                    // textInputAction: TextInputAction.next,
+                    decoration: InputDecoration(
+                      labelText: 'Team Points',
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Colors.greenAccent,
+                          width: 5.0,
+                        ),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null ||
+                          value.isEmpty ||
+                          (double.tryParse(value) == null)) {
+                        return 'Please enter a number!';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Flexible(
+                  child: TextFormField(
+                    controller: bestPointsController,
+                    // textInputAction: TextInputAction.next,
+                    decoration: InputDecoration(
+                      labelText: 'Best Points',
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Colors.greenAccent,
+                          width: 5.0,
+                        ),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null ||
+                          value.isEmpty ||
+                          (double.tryParse(value) == null)) {
+                        return 'Please enter a number!';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Flexible(
+                  child: TextFormField(
+                    controller: weightController,
+                    // textInputAction: TextInputAction.done,
+                    decoration: InputDecoration(
+                      labelText: 'Weight',
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Colors.greenAccent,
+                          width: 5.0,
+                        ),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null ||
+                          value.isEmpty ||
+                          (double.tryParse(value) == null)) {
+                        return 'Please enter a number!';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: submitPointsCalcForm,
+                  child: Text('Check Points'),
+                ),
+                ElevatedButton(
+                  onPressed: estimateRankingsAndStats,
+                  child: Text('Estimate Stats'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+
+    DropdownButton ctfDropdown = DropdownButton<String>(
+      value: selectedItem,
+      hint: Text(selectedItem ?? ""),
+      items:
+          ongoingCTFList.map((String item) {
+            return DropdownMenuItem<String>(value: item, child: Text(item));
+          }).toList(),
+      onChanged: (String? newValue) {
+        setState(() {
+          selectedItem = newValue;
+        });
+      },
+    );
+
+    List<Widget> calcPointItems = [
+      ListTile(
+        titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
+        title: Text('Calculate Points'),
+      ),
+      const Divider(color: Colors.white, height: 3, thickness: 2),
+      // ctfDropdown,
+      calcForm,
+    ];
+
+    return Padding(
+      padding: EdgeInsets.all(6),
+      child: Center(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 6,
+          children: [
+            Expanded(
+              child: Column(
+                spacing: 6,
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: SizedBox.expand(
+                      child: Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14.0),
+                          side: BorderSide(
+                            width: 3,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                        shadowColor: Colors.white,
+                        elevation: 3,
+                        child: ListView.builder(
+                          padding: EdgeInsets.all(5),
+                          itemCount: calcPointItems.length,
+                          itemBuilder: (context, index) {
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 6),
+                              child: calcPointItems[index],
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: SizedBox.expand(
+                      child: _buildCalcPointsCard(
+                        'Top 10 Scores',
+                        ListView.builder(
+                          padding: EdgeInsets.all(5),
+                          itemCount: teamTop10ListItems.length,
+                          itemBuilder: (context, index) {
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 6),
+                              child: teamTop10ListItems[index],
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SizedBox.expand(
+                child: _buildCalcPointsCard(
+                  'Top 50 Teams',
+                  ListView.builder(
+                    padding: EdgeInsets.all(5),
+                    itemCount: topCTFTeams.length,
+                    itemBuilder: (context, index) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        child: topCTFTeams[index],
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1220,7 +1585,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             Flexible(
               child: Text(
-                "<url>",
+                "github.com/sp3p3x/bi0s_stats",
                 style: TextStyle(color: Colors.white70),
                 textAlign: TextAlign.start,
                 maxLines: 2,
