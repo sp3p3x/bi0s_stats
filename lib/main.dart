@@ -87,6 +87,9 @@ class _HomePageState extends State<HomePage> {
   List<Widget> pastCTFListItems = [];
   List<Widget> upcomingCTFListItems = [];
 
+  List<Widget> estimateStatsList = [];
+  List<Widget> estimateRankingsList = [];
+
   Widget calcPointsPageStatsWidget = Card(
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(14.0),
@@ -433,7 +436,10 @@ class _HomePageState extends State<HomePage> {
                         SimpleDialogOption(
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [Text('Position:'), Text('$i')],
+                            children: [
+                              Text('Position:'),
+                              Text('${topCTFTeamsList[i]["pos"]}'),
+                            ],
                           ),
                         ),
                         SimpleDialogOption(
@@ -1043,48 +1049,12 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  _getEstimatedData() async {
+  Future<String> _getEstimatedData(String recievedPoints) async {
+    String isTop10Score = "";
     final webScraper = WebScraper('https://ctftime.org');
+
     if (await webScraper.loadWebPage('/team/662')) {
-      // scrapte team stats
-      final ratingAndCountryPosition = webScraper.getElement(
-        'div.container > div.tab-content > div.active > p',
-        [],
-      );
-
-      String overallPosAndTeamRating = ratingAndCountryPosition[0]['title']
-          .toString()
-          .replaceAll('\n', '');
-      String worldPosition = overallPosAndTeamRating.split(' ')[7];
-      String teamPoints = overallPosAndTeamRating.split(' ')[13];
-      String countryPosition =
-          ratingAndCountryPosition[1]['title'].toString().split(' ')[2];
-
-      teamStatListItems.add(
-        ListTile(
-          titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
-          title: Text("Team Stats"),
-        ),
-      );
-      teamStatListItems.add(
-        const Divider(color: Colors.white, height: 3, thickness: 2),
-      );
-      _addListTile(
-        teamStatListItems,
-        Icons.public,
-        "World Position",
-        worldPosition,
-      );
-      _addListTile(
-        teamStatListItems,
-        Icons.flag,
-        "Country Position",
-        countryPosition,
-      );
-      _addListTile(teamStatListItems, Icons.star, "Team Points", teamPoints);
-      // TODO: add bi0sctf rating
-
-      // scrape top 10 scores
+      // scrape top 10 scores to see if the current calculated score counts
       List<Map> allCTFScores = [];
 
       webScraper
@@ -1121,261 +1091,245 @@ class _HomePageState extends State<HomePage> {
         return a['points'].compareTo(b['points']);
       });
 
-      teamTop10ListItems.add(
-        ListTile(
-          titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
-          title: Text("Top 10 Scores"),
-        ),
-      );
-      teamTop10ListItems.add(
-        const Divider(color: Colors.white, height: 3, thickness: 2),
-      );
-      for (int i = 0; i < 10; i++) {
-        teamTop10ListItems.add(
-          ListTile(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14.0),
-            ),
-            tileColor: Colors.teal.shade900,
-            leadingAndTrailingTextStyle: TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-            ),
-            titleTextStyle: TextStyle(color: Colors.white70, fontSize: 11),
-            iconColor: Colors.white70,
-            title: Text(allCTFScores[i]['ctf']),
-            trailing: Text(allCTFScores[i]['points'].toString()),
-          ),
-        );
-      }
-
-      // scrape top ctf teams
-
-      if (await webScraper.loadWebPage('/stats/')) {
-        List<Map> topCTFTeamsList = [];
-
-        List teamNames = webScraper.getElement(
-          'div.container > table.table.table-striped > tbody > tr > td > a',
-          [],
-        );
-        int pos = 1;
-        for (int i = 0; i < teamNames.length; i++) {
-          if (teamNames[i]['title'] != '') {
-            topCTFTeamsList.add({"pos": pos, "name": teamNames[i]['title']});
-            pos++;
-          }
-        }
-
-        // since web_scraper lib doesnt have a way to scrap stuff with
-        // inconsistent child tags, we resort to ooga booga methods...
-        List<String> countries = [];
-        try {
-          final response = await http.get(
-            Uri.parse('https://ctftime.org/stats/'),
+      if (double.parse(recievedPoints) > allCTFScores[9]['points']) {
+        if (await webScraper.loadWebPage('/team/662')) {
+          // scrape team stats
+          final ratingAndCountryPosition = webScraper.getElement(
+            'div.container > div.tab-content > div.active > p',
+            [],
           );
 
-          if (response.statusCode == 200) {
-            final document = htmlParser.parse(response.body);
-            final countryElements = document.getElementsByClassName('country');
-            for (var country in countryElements) {
-              countries.add(
-                country.children.isNotEmpty
-                    ? country.children[0].attributes['href'].toString().split(
-                      '/',
-                    )[3]
-                    : '-',
-              );
-            }
-          } else {
-            for (int i = 0; i < 50; i++) {
-              countries.add('?');
-            }
-          }
-        } catch (e) {
-          for (int i = 0; i < 50; i++) {
-            countries.add('?');
-          }
-        }
+          String overallPosAndTeamRating = ratingAndCountryPosition[0]['title']
+              .toString()
+              .replaceAll('\n', '');
+          // String worldPosition = overallPosAndTeamRating.split(' ')[7];
+          String teamPoints = overallPosAndTeamRating.split(' ')[13];
+          // String countryPosition =
+          //     ratingAndCountryPosition[1]['title'].toString().split(' ')[2];
 
-        List teamPoints = webScraper.getElement(
-          'div.container > table.table.table-striped > tbody > tr > td',
-          [],
-        );
-        pos = 0;
-        for (int i = 4; i < teamPoints.length; i += 6) {
-          topCTFTeamsList[pos]["points"] = teamPoints[i]['title'];
-          pos++;
-        }
-
-        topCTFTeams.add(
-          ListTile(
-            titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
-            title: Text("Top 50 Teams"),
-          ),
-        );
-        topCTFTeams.add(
-          const Divider(color: Colors.white, height: 3, thickness: 2),
-        );
-
-        // i dont really see the need for a index bar (or im too lazy to make it responsive)
-        // but a temp one is here in case...
-
-        // topCTFTeams.add(
-        //   Padding(
-        //     padding: EdgeInsets.only(left: 8, right: 25),
-        //     child: Row(
-        //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        //       children: [
-        //         Flexible(
-        //           child: Row(
-        //             spacing: 6,
-        //             children: [
-        //               Text('Pos'),
-        //               Flexible(
-        //                 child: Text(
-        //                   "Name",
-        //                   textAlign: TextAlign.start,
-        //                   maxLines: 1,
-        //                   softWrap: false,
-        //                   overflow: TextOverflow.fade,
-        //                 ),
-        //               ),
-        //             ],
-        //           ),
-        //         ),
-        //         Flexible(
-        //           child: Row(
-        //             spacing: 15,
-        //             children: [
-        //               Flexible(
-        //                 child: Text(
-        //                   "Country",
-        //                   textAlign: TextAlign.start,
-        //                   maxLines: 1,
-        //                   softWrap: false,
-        //                   overflow: TextOverflow.fade,
-        //                 ),
-        //               ),
-        //               Text("Points"),
-        //             ],
-        //           ),
-        //         ),
-        //       ],
-        //     ),
-        //   ),
-        // );
-
-        for (int i = 0; i < topCTFTeamsList.length; i++) {
-          topCTFTeams.add(
+          estimateStatsList.add(
             ListTile(
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return SimpleDialog(
-                      backgroundColor:
-                          (topCTFTeamsList[i]['name'] == 'bi0s')
-                              ? Colors.teal
-                              : ((countries[i] == 'IN')
-                                  ? Colors.lightGreen.shade800
-                                  : Colors.teal.shade900),
-                      title: Text(
-                        topCTFTeamsList[i]['name'].toString(),
-                        textAlign: TextAlign.start,
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.fade,
-                      ),
-                      children: <Widget>[
-                        SimpleDialogOption(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [Text('Position:'), Text('$i')],
-                          ),
-                        ),
-                        SimpleDialogOption(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [Text('Country:'), Text(countries[i])],
-                          ),
-                        ),
-                        SimpleDialogOption(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Points:'),
-                              Text('${topCTFTeamsList[i]["points"]}'),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+              titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
+              title: Text("Estimated Stats"),
+            ),
+          );
+          estimateStatsList.add(
+            const Divider(color: Colors.white, height: 3, thickness: 2),
+          );
+          // _addListTile(
+          //   teamStatListItems,
+          //   Icons.public,
+          //   "World Position",
+          //   worldPosition,
+          // );
+          // _addListTile(
+          //   teamStatListItems,
+          //   Icons.flag,
+          //   "Country Position",
+          //   countryPosition,
+          // );
+          _addListTile(
+            teamStatListItems,
+            Icons.star,
+            "Team Points",
+            teamPoints,
+          );
+
+          // scrape top ctf teams
+          if (await webScraper.loadWebPage('/stats/')) {
+            List<Map> topCTFTeamsList = [];
+
+            List teamNames = webScraper.getElement(
+              'div.container > table.table.table-striped > tbody > tr > td > a',
+              [],
+            );
+            int pos = 1;
+            for (int i = 0; i < teamNames.length; i++) {
+              if (teamNames[i]['title'] != '') {
+                topCTFTeamsList.add({
+                  "pos": pos,
+                  "name": teamNames[i]['title'],
+                });
+                pos++;
+              }
+            }
+
+            // since web_scraper lib doesnt have a way to scrap stuff with
+            // inconsistent child tags, we resort to ooga booga methods...
+            List<String> countries = [];
+            try {
+              final response = await http.get(
+                Uri.parse('https://ctftime.org/stats/'),
+              );
+
+              if (response.statusCode == 200) {
+                final document = htmlParser.parse(response.body);
+                final countryElements = document.getElementsByClassName(
+                  'country',
                 );
-              },
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14.0),
+                for (var country in countryElements) {
+                  countries.add(
+                    country.children.isNotEmpty
+                        ? country.children[0].attributes['href']
+                            .toString()
+                            .split('/')[3]
+                        : '-',
+                  );
+                }
+              } else {
+                for (int i = 0; i < 50; i++) {
+                  countries.add('?');
+                }
+              }
+            } catch (e) {
+              for (int i = 0; i < 50; i++) {
+                countries.add('?');
+              }
+            }
+
+            List teamPoints = webScraper.getElement(
+              'div.container > table.table.table-striped > tbody > tr > td',
+              [],
+            );
+            pos = 0;
+            for (int i = 4; i < teamPoints.length; i += 6) {
+              topCTFTeamsList[pos]["points"] = teamPoints[i]['title'];
+              pos++;
+            }
+
+            topCTFTeams.add(
+              ListTile(
+                titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
+                title: Text("Top 50 Teams"),
               ),
-              leadingAndTrailingTextStyle: TextStyle(fontSize: 12),
-              titleTextStyle: TextStyle(fontSize: 12),
-              tileColor:
-                  (topCTFTeamsList[i]['name'] == 'bi0s')
-                      ? Colors.teal
-                      : ((countries[i] == 'IN')
-                          ? Colors.lightGreen.shade800
-                          : Colors.teal.shade900),
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                spacing: 7,
-                children: [
-                  Flexible(
-                    child: Row(
-                      spacing: 6,
-                      children: [
-                        Text(
-                          topCTFTeamsList[i]['pos'].toString(),
-                          style: TextStyle(color: Colors.white70),
-                        ),
-                        Flexible(
-                          child: Text(
+            );
+            topCTFTeams.add(
+              const Divider(color: Colors.white, height: 3, thickness: 2),
+            );
+
+            for (int i = 0; i < topCTFTeamsList.length; i++) {
+              topCTFTeams.add(
+                ListTile(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return SimpleDialog(
+                          backgroundColor:
+                              (topCTFTeamsList[i]['name'] == 'bi0s')
+                                  ? Colors.teal
+                                  : ((countries[i] == 'IN')
+                                      ? Colors.lightGreen.shade800
+                                      : Colors.teal.shade900),
+                          title: Text(
                             topCTFTeamsList[i]['name'].toString(),
                             textAlign: TextAlign.start,
-                            maxLines: 2,
-                            softWrap: true,
+                            maxLines: 1,
+                            softWrap: false,
                             overflow: TextOverflow.fade,
                           ),
-                        ),
-                      ],
-                    ),
+                          children: <Widget>[
+                            SimpleDialogOption(
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [Text('Position:'), Text('$i')],
+                              ),
+                            ),
+                            SimpleDialogOption(
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Country:'),
+                                  Text(countries[i]),
+                                ],
+                              ),
+                            ),
+                            SimpleDialogOption(
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Points:'),
+                                  Text('${topCTFTeamsList[i]["points"]}'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14.0),
                   ),
-                  Row(
-                    spacing: 10,
+                  leadingAndTrailingTextStyle: TextStyle(fontSize: 12),
+                  titleTextStyle: TextStyle(fontSize: 12),
+                  tileColor:
+                      (topCTFTeamsList[i]['name'] == 'bi0s')
+                          ? Colors.teal
+                          : ((countries[i] == 'IN')
+                              ? Colors.lightGreen.shade800
+                              : Colors.teal.shade900),
+                  title: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    spacing: 7,
                     children: [
-                      Text(
-                        countries[i],
-                        style: TextStyle(color: Colors.white70),
+                      Flexible(
+                        child: Row(
+                          spacing: 6,
+                          children: [
+                            Text(
+                              topCTFTeamsList[i]['pos'].toString(),
+                              style: TextStyle(color: Colors.white70),
+                            ),
+                            Flexible(
+                              child: Text(
+                                topCTFTeamsList[i]['name'].toString(),
+                                textAlign: TextAlign.start,
+                                maxLines: 2,
+                                softWrap: true,
+                                overflow: TextOverflow.fade,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      Text(topCTFTeamsList[i]['points'].toString()),
+                      Row(
+                        spacing: 10,
+                        children: [
+                          Text(
+                            countries[i],
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                          Text(topCTFTeamsList[i]['points'].toString()),
+                        ],
+                      ),
                     ],
                   ),
-                ],
-              ),
-            ),
-          );
-        }
+                ),
+              );
+            }
 
-        setState(() {
-          isStatsPageLoading = false;
-        });
+            setState(() {
+              isStatsPageLoading = false;
+            });
+          } else {
+            teamStatListItems.add(const Text('Cannot load URL!'));
+            teamTop10ListItems.add(const Text('Cannot load URL!'));
+            topCTFTeams.add(const Text('Cannot load URL!'));
+            setState(() {
+              isStatsPageLoading = false;
+            });
+          }
+        }
+        isTop10Score = 'cooking';
       } else {
-        teamStatListItems.add(const Text('Cannot load URL!'));
-        teamTop10ListItems.add(const Text('Cannot load URL!'));
-        topCTFTeams.add(const Text('Cannot load URL!'));
-        setState(() {
-          isStatsPageLoading = false;
-        });
+        isTop10Score = 'skillissue';
       }
     }
+    return isTop10Score;
   }
 
   Widget _buildStatsCard(String title, Widget child) {
@@ -1659,7 +1613,7 @@ class _HomePageState extends State<HomePage> {
           final rating =
               ((pointsCoef + placeCoef) * weight) /
               (1 / (1 + teamRank / totalTeams));
-          return rating;
+          return rating.toStringAsFixed(3);
         }
       } catch (e) {
         return 'Invalid Values Provided!';
@@ -1676,32 +1630,150 @@ class _HomePageState extends State<HomePage> {
           double.parse(totalTeamsController.text),
         );
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Team will recieve: ${pointsRecieved.toStringAsFixed(3)} pts!',
-            ),
-          ),
+          SnackBar(content: Text('Team will recieve: $pointsRecieved pts!')),
         );
       }
     }
 
-    void estimateRankingsAndStats() {
-      if (formKey.currentState!.validate()) {
-        final pointsRecieved = calcctftimerating(
-          double.parse(teamRankController.text),
-          double.parse(teamPointsController.text),
-          double.parse(bestPointsController.text),
-          double.parse(weightController.text),
-          double.parse(totalTeamsController.text),
-        );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Team will recieve: ${pointsRecieved.toStringAsFixed(3)} pts!',
-            ),
+    void estimateRankingsAndStats() async {
+      setState(() {
+        calcPointsPageStatsWidget = Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14.0),
+            side: BorderSide(width: 3, color: Colors.white),
+          ),
+          shadowColor: Colors.white,
+          elevation: 3,
+          child: ListView(
+            children: [
+              ListTile(
+                titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
+                title: Text('Estimated Stats'),
+              ),
+              const Divider(color: Colors.white, height: 3, thickness: 2),
+              SizedBox(height: 40),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  ),
+                ],
+              ),
+            ],
           ),
         );
+
+        calcPointsPageRankingsWidget = Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14.0),
+            side: BorderSide(width: 3, color: Colors.white),
+          ),
+          shadowColor: Colors.white,
+          elevation: 3,
+          child: ListView(
+            children: [
+              ListTile(
+                titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
+                title: Text('Estimated Rankings'),
+              ),
+              const Divider(color: Colors.white, height: 3, thickness: 2),
+              SizedBox(height: 40),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      });
+
+      String foo = '20.912';
+      String stats = await _getEstimatedData(foo);
+      if (stats == 'skillissue') {
+        setState(() {
+          calcPointsPageStatsWidget = Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14.0),
+              side: BorderSide(width: 3, color: Colors.white),
+            ),
+            shadowColor: Colors.white,
+            elevation: 3,
+            child: ListView(
+              children: [
+                ListTile(
+                  titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
+                  title: Text('Estimated Stats'),
+                ),
+                const Divider(color: Colors.white, height: 3, thickness: 2),
+                SizedBox(height: 40),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        'Score is not in Top 10! :/',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+
+          calcPointsPageRankingsWidget = Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14.0),
+              side: BorderSide(width: 3, color: Colors.white),
+            ),
+            shadowColor: Colors.white,
+            elevation: 3,
+            child: ListView(
+              children: [
+                ListTile(
+                  titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
+                  title: Text('Estimated Rankings'),
+                ),
+                const Divider(color: Colors.white, height: 3, thickness: 2),
+                SizedBox(height: 40),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        'Score is not in Top 10! :/',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        });
       }
+
+      // if (formKey.currentState!.validate()) {
+      //   final pointsRecieved = calcctftimerating(
+      //     double.parse(teamRankController.text),
+      //     double.parse(teamPointsController.text),
+      //     double.parse(bestPointsController.text),
+      //     double.parse(weightController.text),
+      //     double.parse(totalTeamsController.text),
+      //   );
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     SnackBar(content: Text('Team will recieve: $pointsRecieved pts!')),
+      //   );
+      // }
     }
 
     Form calcForm = Form(
