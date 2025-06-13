@@ -1154,13 +1154,6 @@ class _HomePageState extends State<HomePage> {
             overallPosAndTeamRating.split(' ')[13],
           );
 
-          _addListTile(
-            estimateStatsList,
-            Icons.star,
-            "Team Points",
-            (teamPoints + double.parse(recievedPoints)).toStringAsFixed(3),
-          );
-
           // scrape top ctf teams
           if (await webScraper.loadWebPage('/stats/')) {
             List<Map> topCTFTeamsList = [];
@@ -1231,6 +1224,10 @@ class _HomePageState extends State<HomePage> {
               }
             }
 
+            for (int i = 0; i < topCTFTeamsList.length; i++) {
+              topCTFTeamsList[i]['country'] = countries[i];
+            }
+
             topCTFTeamsList.sort((b, a) {
               return a['points'].compareTo(b['points']);
             });
@@ -1247,6 +1244,30 @@ class _HomePageState extends State<HomePage> {
               }
             }
 
+            int countryPosition = 0;
+            for (int i = 0; i < topCTFTeamsList.length; i++) {
+              if (topCTFTeamsList[i]['country'] == 'IN') {
+                countryPosition++;
+              }
+              if (topCTFTeamsList[i]['name'] == 'bi0s') {
+                break;
+              }
+            }
+
+            _addListTile(
+              estimateStatsList,
+              Icons.flag,
+              "Country Position",
+              countryPosition.toString(),
+            );
+
+            _addListTile(
+              estimateStatsList,
+              Icons.star,
+              "Team Points",
+              (teamPoints + double.parse(recievedPoints)).toStringAsFixed(3),
+            );
+
             for (int i = 0; i < topCTFTeamsList.length; i++) {
               estimateRankingsList.add(
                 ListTile(
@@ -1258,7 +1279,7 @@ class _HomePageState extends State<HomePage> {
                           backgroundColor:
                               (topCTFTeamsList[i]['name'] == 'bi0s')
                                   ? Colors.teal
-                                  : ((countries[i] == 'IN')
+                                  : ((topCTFTeamsList[i]['country'] == 'IN')
                                       ? Colors.lightGreen.shade800
                                       : Colors.teal.shade900),
                           title: Text(
@@ -1282,7 +1303,7 @@ class _HomePageState extends State<HomePage> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text('Country:'),
-                                  Text(countries[i]),
+                                  Text(topCTFTeamsList[i]['country']),
                                 ],
                               ),
                             ),
@@ -1309,7 +1330,7 @@ class _HomePageState extends State<HomePage> {
                   tileColor:
                       (topCTFTeamsList[i]['name'] == 'bi0s')
                           ? Colors.teal
-                          : ((countries[i] == 'IN')
+                          : ((topCTFTeamsList[i]['country'] == 'IN')
                               ? Colors.lightGreen.shade800
                               : Colors.teal.shade900),
                   title: Row(
@@ -1340,7 +1361,7 @@ class _HomePageState extends State<HomePage> {
                         spacing: 10,
                         children: [
                           Text(
-                            countries[i],
+                            topCTFTeamsList[i]['country'],
                             style: TextStyle(color: Colors.white70),
                           ),
                           Text(topCTFTeamsList[i]['points'].toString()),
@@ -1918,11 +1939,7 @@ class _HomePageState extends State<HomePage> {
     );
 
     List<Widget> calcPointItems = [
-      ListTile(
-        titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
-        title: Text('Calculate Points'),
-      ),
-      const Divider(color: Colors.white, height: 3, thickness: 2),
+      const SizedBox(),
       // ctfDropdown,
       calcForm,
     ];
@@ -1941,17 +1958,9 @@ class _HomePageState extends State<HomePage> {
                   Expanded(
                     flex: 2,
                     child: SizedBox.expand(
-                      child: Card(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14.0),
-                          side: BorderSide(
-                            width: 3,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
-                        shadowColor: Colors.white,
-                        elevation: 3,
-                        child: ListView.builder(
+                      child: _buildCard(
+                        'Calculate Points',
+                        ListView.builder(
                           padding: EdgeInsets.all(5),
                           itemCount: calcPointItems.length,
                           itemBuilder: (context, index) {
@@ -1961,6 +1970,7 @@ class _HomePageState extends State<HomePage> {
                             );
                           },
                         ),
+                        isStatsPageLoading,
                       ),
                     ),
                   ),
