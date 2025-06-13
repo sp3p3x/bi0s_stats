@@ -585,9 +585,12 @@ class _HomePageState extends State<HomePage> {
       List<Map> activeCTFList = [];
       for (var element in webScraper.getElement(
         'div.container > table.table.table-striped > tbody > tr > td > a',
-        [],
+        ['href'],
       )) {
-        activeCTFList.add({"name": element['title']});
+        activeCTFList.add({
+          "name": element['title'],
+          "link": element['attributes']['href'],
+        });
       }
 
       final ctfDetails = webScraper.getElement(
@@ -698,6 +701,22 @@ class _HomePageState extends State<HomePage> {
                           ],
                         ),
                       ),
+                      SimpleDialogOption(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('CTFtime:'),
+                            ElevatedButton(
+                              onPressed: () {
+                                openURL(
+                                  "https://ctftime.org${element['link']}",
+                                );
+                              },
+                              child: Text("Click here!"),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   );
                 },
@@ -728,7 +747,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 Text(
                   '${element["ctfRating"]} pts',
-                  style: TextStyle(color: Colors.white, fontSize: 10),
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
                 ),
                 // Text(
                 //   'Click to Show more!',
@@ -754,7 +773,10 @@ class _HomePageState extends State<HomePage> {
           if (element['title'] != "*" &&
               (element['attributes']['href'].toString().contains('/event')) &&
               pos < 10) {
-            pastCTFList.add({"name": element['title']});
+            pastCTFList.add({
+              "name": element['title'],
+              "link": element['attributes']['href'],
+            });
             pos++;
           }
         }
@@ -875,6 +897,22 @@ class _HomePageState extends State<HomePage> {
                             ],
                           ),
                         ),
+                        SimpleDialogOption(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('CTFtime:'),
+                              ElevatedButton(
+                                onPressed: () {
+                                  openURL(
+                                    "https://ctftime.org${element['link']}",
+                                  );
+                                },
+                                child: Text("Click here!"),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     );
                   },
@@ -923,7 +961,10 @@ class _HomePageState extends State<HomePage> {
         )) {
           if (element['title'] != "*" &&
               (element['attributes']['href'].toString().contains('/event'))) {
-            upcomingCTFList.add({"name": element['title']});
+            upcomingCTFList.add({
+              "name": element['title'],
+              'link': element['attributes']['href'],
+            });
           }
         }
 
@@ -1040,6 +1081,22 @@ class _HomePageState extends State<HomePage> {
                             ],
                           ),
                         ),
+                        SimpleDialogOption(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('CTFtime:'),
+                              ElevatedButton(
+                                onPressed: () {
+                                  openURL(
+                                    "https://ctftime.org${element['link']}",
+                                  );
+                                },
+                                child: Text("Click here!"),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     );
                   },
@@ -1068,10 +1125,23 @@ class _HomePageState extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '${element["ctfRating"]} pts\n${element["startDateTime"]}',
-                    style: TextStyle(color: Colors.white, fontSize: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${element["ctfRating"]} pts',
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                      Text(
+                        '${element["startDateTime"].split(",")[0]}',
+                        style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                    ],
                   ),
+                  // Text(
+                  //   '${element["ctfRating"]} pts\n${element["startDateTime"]}',
+                  //   style: TextStyle(color: Colors.white, fontSize: 10),
+                  // ),
                   // Text(
                   //   'Click to Show more!',
                   //   style: TextStyle(color: Colors.white70, fontSize: 10),
@@ -1406,7 +1476,7 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       const Divider(
                         color: Colors.transparent,
-                        height: 100,
+                        height: 40,
                         thickness: 0,
                       ),
                       Center(
@@ -1630,122 +1700,143 @@ class _HomePageState extends State<HomePage> {
           double.parse(weightController.text),
           double.parse(totalTeamsController.text),
         );
+        if (pointsRecieved == 'Invalid Values Provided!') {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('$pointsRecieved')));
+          return;
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Team will recieve: $pointsRecieved pts!')),
+          SnackBar(
+            content: Text(
+              'Team will recieve: ${pointsRecieved.toStringAsFixed(3)} pts!',
+            ),
+          ),
         );
       }
     }
 
     void estimateRankingsAndStats() async {
-      estimateRankingsList.clear();
-      estimateStatsList.clear();
+      if (formKey.currentState!.validate()) {
+        final pointsRecieved = calcctftimerating(
+          double.parse(teamRankController.text),
+          double.parse(teamPointsController.text),
+          double.parse(bestPointsController.text),
+          double.parse(weightController.text),
+          double.parse(totalTeamsController.text),
+        );
+        if (pointsRecieved == 'Invalid Values Provided!') {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('$pointsRecieved')));
+          return;
+        }
 
-      setState(() {
-        calcPointsPageStatsWidget = _buildCard(
-          "Estimated Stats",
-          Text(''),
-          true,
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Team will recieve: ${pointsRecieved.toStringAsFixed(3)} pts!',
+            ),
+          ),
         );
 
-        calcPointsPageRankingsWidget = _buildCard(
-          "Estimated Rankings",
-          Text(''),
-          true,
-        );
-      });
+        estimateRankingsList.clear();
+        estimateStatsList.clear();
 
-      String foo = '80.912';
-      String stats = await _getEstimatedData(foo);
-      if (stats == 'skillissue') {
         setState(() {
           calcPointsPageStatsWidget = _buildCard(
             "Estimated Stats",
-            ListView(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        'Score is not in Top 10! :/',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            false,
+            Text(''),
+            true,
           );
 
           calcPointsPageRankingsWidget = _buildCard(
             "Estimated Rankings",
-            ListView(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        'Score is not in Top 10! :/',
-                        style: TextStyle(color: Colors.white70),
+            Text(''),
+            true,
+          );
+        });
+
+        String stats = await _getEstimatedData(pointsRecieved.toString());
+        if (stats == 'skillissue') {
+          setState(() {
+            calcPointsPageStatsWidget = _buildCard(
+              "Estimated Stats",
+              ListView(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          'Score is not in Top 10! :/',
+                          style: TextStyle(color: Colors.white70),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            false,
-          );
-        });
-      } else if (stats == 'cooking') {
-        setState(() {
-          calcPointsPageStatsWidget = _buildCard(
-            'Estimated Stats',
-            ListView.builder(
-              padding: EdgeInsets.all(10),
-              itemCount: estimateStatsList.length,
-              itemBuilder: (context, index) {
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 6),
-                  child: estimateStatsList[index],
-                );
-              },
-            ),
-            false,
-          );
+                    ],
+                  ),
+                ],
+              ),
+              false,
+            );
 
-          calcPointsPageRankingsWidget = _buildCard(
-            'Estimated Rankings',
-            ListView.builder(
-              padding: EdgeInsets.all(10),
-              itemCount: estimateRankingsList.length,
-              itemBuilder: (context, index) {
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 6),
-                  child: estimateRankingsList[index],
-                );
-              },
-            ),
-            false,
-          );
-        });
+            calcPointsPageRankingsWidget = _buildCard(
+              "Estimated Rankings",
+              ListView(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          'Score is not in Top 10! :/',
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              false,
+            );
+          });
+        } else if (stats == 'cooking') {
+          setState(() {
+            calcPointsPageStatsWidget = _buildCard(
+              'Estimated Stats',
+              ListView.builder(
+                padding: EdgeInsets.all(10),
+                itemCount: estimateStatsList.length,
+                itemBuilder: (context, index) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 6),
+                    child: estimateStatsList[index],
+                  );
+                },
+              ),
+              false,
+            );
+
+            calcPointsPageRankingsWidget = _buildCard(
+              'Estimated Rankings',
+              ListView.builder(
+                padding: EdgeInsets.all(10),
+                itemCount: estimateRankingsList.length,
+                itemBuilder: (context, index) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 6),
+                    child: estimateRankingsList[index],
+                  );
+                },
+              ),
+              false,
+            );
+          });
+        }
       }
-
-      // if (formKey.currentState!.validate()) {
-      //   final pointsRecieved = calcctftimerating(
-      //     double.parse(teamRankController.text),
-      //     double.parse(teamPointsController.text),
-      //     double.parse(bestPointsController.text),
-      //     double.parse(weightController.text),
-      //     double.parse(totalTeamsController.text),
-      //   );
-      //   ScaffoldMessenger.of(context).showSnackBar(
-      //     SnackBar(content: Text('Team will recieve: $pointsRecieved pts!')),
-      //   );
-      // }
     }
 
     Form calcForm = Form(
@@ -1764,6 +1855,10 @@ class _HomePageState extends State<HomePage> {
                     // onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                     decoration: InputDecoration(
                       labelText: 'Team Rank',
+                      labelStyle: TextStyle(color: Colors.white),
+                      errorBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: const Color(0xFFCF6679)),
+                      ),
                       border: OutlineInputBorder(
                         borderSide: BorderSide(
                           color: Colors.greenAccent,
@@ -1793,6 +1888,10 @@ class _HomePageState extends State<HomePage> {
                     // onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
                     decoration: InputDecoration(
                       labelText: 'Total Teams',
+                      labelStyle: TextStyle(color: Colors.white),
+                      errorBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: const Color(0xFFCF6679)),
+                      ),
                       border: OutlineInputBorder(
                         borderSide: BorderSide(
                           color: Colors.greenAccent,
@@ -1820,6 +1919,10 @@ class _HomePageState extends State<HomePage> {
                     // textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
                       labelText: 'Team Points',
+                      labelStyle: TextStyle(color: Colors.white),
+                      errorBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: const Color(0xFFCF6679)),
+                      ),
                       border: OutlineInputBorder(
                         borderSide: BorderSide(
                           color: Colors.greenAccent,
@@ -1847,6 +1950,10 @@ class _HomePageState extends State<HomePage> {
                     // textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
                       labelText: 'Best Points',
+                      labelStyle: TextStyle(color: Colors.white),
+                      errorBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: const Color(0xFFCF6679)),
+                      ),
                       border: OutlineInputBorder(
                         borderSide: BorderSide(
                           color: Colors.greenAccent,
@@ -1874,6 +1981,10 @@ class _HomePageState extends State<HomePage> {
                     // textInputAction: TextInputAction.done,
                     decoration: InputDecoration(
                       labelText: 'Weight',
+                      labelStyle: TextStyle(color: Colors.white),
+                      errorBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: const Color(0xFFCF6679)),
+                      ),
                       border: OutlineInputBorder(
                         borderSide: BorderSide(
                           color: Colors.greenAccent,
@@ -1970,7 +2081,7 @@ class _HomePageState extends State<HomePage> {
                             );
                           },
                         ),
-                        isStatsPageLoading,
+                        false,
                       ),
                     ),
                   ),
@@ -2041,6 +2152,53 @@ class _HomePageState extends State<HomePage> {
 
     aboutListItems.add(
       ListTile(
+        onTap: () async {
+          eastereggCountdown++;
+          if (eastereggCountdown == 7) {
+            openURL(
+              'https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcRcKwYU7J96QuZNKxtcl0TbCHm-fkdT5wXwj-1i4l0XFMlhDpux',
+            );
+            eastereggCountdown = 0;
+          }
+        },
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14.0),
+        ),
+        tileColor: Colors.teal.shade900,
+        leading: Icon(Icons.person, size: 25, color: Colors.white70),
+        titleTextStyle: TextStyle(color: Colors.white, fontSize: 16),
+        title: Row(
+          children: [
+            Flexible(
+              child: Text(
+                "Contributor: Anikait Panigrahi",
+                textAlign: TextAlign.start,
+                maxLines: 2,
+                softWrap: true,
+                overflow: TextOverflow.fade,
+              ),
+            ),
+          ],
+        ),
+        subtitle: Row(
+          children: [
+            Flexible(
+              child: Text(
+                "@br34dcrumb",
+                style: TextStyle(color: Colors.white70),
+                textAlign: TextAlign.start,
+                maxLines: 2,
+                softWrap: true,
+                overflow: TextOverflow.fade,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    aboutListItems.add(
+      ListTile(
         onTap: () {
           openURL('https://github.com/sp3p3x/bi0s_stats');
         },
@@ -2068,6 +2226,47 @@ class _HomePageState extends State<HomePage> {
             Flexible(
               child: Text(
                 "github.com/sp3p3x/bi0s_stats",
+                style: TextStyle(color: Colors.white70),
+                textAlign: TextAlign.start,
+                maxLines: 2,
+                softWrap: true,
+                overflow: TextOverflow.fade,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    aboutListItems.add(
+      ListTile(
+        onTap: () async {
+          openURL('https://ctftime.org/');
+        },
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14.0),
+        ),
+        tileColor: Colors.teal.shade900,
+        leading: Icon(Icons.public, size: 25, color: Colors.white70),
+        titleTextStyle: TextStyle(color: Colors.white, fontSize: 16),
+        title: Row(
+          children: [
+            Flexible(
+              child: Text(
+                "CTFtime",
+                textAlign: TextAlign.start,
+                maxLines: 2,
+                softWrap: true,
+                overflow: TextOverflow.fade,
+              ),
+            ),
+          ],
+        ),
+        subtitle: Row(
+          children: [
+            Flexible(
+              child: Text(
+                "Click to open CTFtime",
                 style: TextStyle(color: Colors.white70),
                 textAlign: TextAlign.start,
                 maxLines: 2,
