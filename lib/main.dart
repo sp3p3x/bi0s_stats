@@ -90,66 +90,102 @@ class _HomePageState extends State<HomePage> {
   List<Widget> estimateStatsList = [];
   List<Widget> estimateRankingsList = [];
 
-  Widget calcPointsPageStatsWidget = Card(
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(14.0),
-      side: BorderSide(width: 3, color: Colors.white),
-    ),
-    shadowColor: Colors.white,
-    elevation: 3,
-    child: ListView(
-      children: [
-        ListTile(
-          titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
-          title: Text('Estimated Stats'),
+  Widget calcPointsPageStatsWidget = Stack(
+    clipBehavior: Clip.none,
+    children: [
+      Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(5.0),
+          side: BorderSide(width: 3, color: Colors.white),
         ),
-        const Divider(color: Colors.white, height: 3, thickness: 2),
-        SizedBox(height: 40),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
+        shadowColor: Colors.white,
+        elevation: 3,
+        child: ListView(
           children: [
-            Flexible(
-              child: Text(
-                'Nothing to Show Here!',
-                style: TextStyle(color: Colors.white70),
-              ),
+            SizedBox(height: 40),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Text(
+                    'Nothing to Show Here!',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
-      ],
-    ),
+      ),
+      Positioned(
+        top: -5,
+        left: 13,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 0),
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(5.0),
+          ),
+          child: Text(
+            'Estimated Stats',
+            style: TextStyle(
+              fontWeight: FontWeight.normal,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    ],
   );
 
-  Widget calcPointsPageRankingsWidget = Card(
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(14.0),
-      side: BorderSide(width: 3, color: Colors.white),
-    ),
-    shadowColor: Colors.white,
-    elevation: 3,
-    child: ListView(
-      children: [
-        ListTile(
-          titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
-          title: Text('Estimated Rankings'),
+  Widget calcPointsPageRankingsWidget = Stack(
+    clipBehavior: Clip.none,
+    children: [
+      Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(5.0),
+          side: BorderSide(width: 3, color: Colors.white),
         ),
-        const Divider(color: Colors.white, height: 3, thickness: 2),
-        SizedBox(height: 40),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
+        shadowColor: Colors.white,
+        elevation: 3,
+        child: ListView(
           children: [
-            Flexible(
-              child: Text(
-                'Nothing to Show Here!',
-                style: TextStyle(color: Colors.white70),
-              ),
+            SizedBox(height: 40),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Text(
+                    'Nothing to Show Here!',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
-      ],
-    ),
+      ),
+      Positioned(
+        top: -5,
+        left: 13,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 0),
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(5.0),
+          ),
+          child: Text(
+            'Estimated Rankings',
+            style: TextStyle(
+              fontWeight: FontWeight.normal,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    ],
   );
 
   _addListTile(
@@ -1062,47 +1098,10 @@ class _HomePageState extends State<HomePage> {
 
   Future<String> _getEstimatedData(String recievedPoints) async {
     String isTop10Score = "";
+
     final webScraper = WebScraper('https://ctftime.org');
 
     if (await webScraper.loadWebPage('/team/662')) {
-      // scrape top 10 scores to see if the current calculated score counts
-      final ratingAndCountryPosition = webScraper.getElement(
-        'div.container > div.tab-content > div.active > p',
-        [],
-      );
-
-      String overallPosAndTeamRating = ratingAndCountryPosition[0]['title']
-          .toString()
-          .replaceAll('\n', '');
-      String worldPosition = overallPosAndTeamRating.split(' ')[7];
-      String teamPoints = overallPosAndTeamRating.split(' ')[13];
-      String countryPosition =
-          ratingAndCountryPosition[1]['title'].toString().split(' ')[2];
-
-      teamStatListItems.add(
-        ListTile(
-          titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
-          title: Text("Team Stats"),
-        ),
-      );
-      teamStatListItems.add(
-        const Divider(color: Colors.white, height: 3, thickness: 2),
-      );
-      _addListTile(
-        teamStatListItems,
-        Icons.public,
-        "World Position",
-        worldPosition,
-      );
-      _addListTile(
-        teamStatListItems,
-        Icons.flag,
-        "Country Position",
-        countryPosition,
-      );
-      _addListTile(teamStatListItems, Icons.star, "Team Points", teamPoints);
-      // TODO: add bi0sctf rating
-
       // scrape top 10 scores
       List<Map> allCTFScores = [];
 
@@ -1151,41 +1150,18 @@ class _HomePageState extends State<HomePage> {
           String overallPosAndTeamRating = ratingAndCountryPosition[0]['title']
               .toString()
               .replaceAll('\n', '');
-          // String worldPosition = overallPosAndTeamRating.split(' ')[7];
-          String teamPoints = overallPosAndTeamRating.split(' ')[13];
-          // String countryPosition =
-          //     ratingAndCountryPosition[1]['title'].toString().split(' ')[2];
+          final teamPoints = double.parse(
+            overallPosAndTeamRating.split(' ')[13],
+          );
 
-          estimateStatsList.add(
-            ListTile(
-              titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
-              title: Text("Estimated Stats"),
-            ),
-          );
-          estimateStatsList.add(
-            const Divider(color: Colors.white, height: 3, thickness: 2),
-          );
-          // _addListTile(
-          //   teamStatListItems,
-          //   Icons.public,
-          //   "World Position",
-          //   worldPosition,
-          // );
-          // _addListTile(
-          //   teamStatListItems,
-          //   Icons.flag,
-          //   "Country Position",
-          //   countryPosition,
-          // );
           _addListTile(
             estimateStatsList,
             Icons.star,
             "Team Points",
-            teamPoints,
+            (teamPoints + double.parse(recievedPoints)).toStringAsFixed(3),
           );
 
           // scrape top ctf teams
-
           if (await webScraper.loadWebPage('/stats/')) {
             List<Map> topCTFTeamsList = [];
 
@@ -1237,76 +1213,42 @@ class _HomePageState extends State<HomePage> {
               }
             }
 
-            List teamPoints = webScraper.getElement(
+            List teamPointsList = webScraper.getElement(
               'div.container > table.table.table-striped > tbody > tr > td',
               [],
             );
             pos = 0;
-            for (int i = 4; i < teamPoints.length; i += 6) {
-              topCTFTeamsList[pos]["points"] = teamPoints[i]['title'];
+            for (int i = 4; i < teamPointsList.length; i += 6) {
+              topCTFTeamsList[pos]["points"] = teamPointsList[i]['title'];
               pos++;
             }
 
-            topCTFTeams.add(
-              ListTile(
-                titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
-                title: Text("Top 50 Teams"),
-              ),
-            );
-            topCTFTeams.add(
-              const Divider(color: Colors.white, height: 3, thickness: 2),
-            );
+            for (int i = 0; i < topCTFTeamsList.length; i++) {
+              if (topCTFTeamsList[i]['name'] == 'bi0s') {
+                topCTFTeamsList[i]['points'] = (teamPoints +
+                        double.parse(recievedPoints))
+                    .toStringAsFixed(3);
+              }
+            }
 
-            // i dont really see the need for a index bar (or im too lazy to make it responsive)
-            // but a temp one is here in case...
-
-            // topCTFTeams.add(
-            //   Padding(
-            //     padding: EdgeInsets.only(left: 8, right: 25),
-            //     child: Row(
-            //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //       children: [
-            //         Flexible(
-            //           child: Row(
-            //             spacing: 6,
-            //             children: [
-            //               Text('Pos'),
-            //               Flexible(
-            //                 child: Text(
-            //                   "Name",
-            //                   textAlign: TextAlign.start,
-            //                   maxLines: 1,
-            //                   softWrap: false,
-            //                   overflow: TextOverflow.fade,
-            //                 ),
-            //               ),
-            //             ],
-            //           ),
-            //         ),
-            //         Flexible(
-            //           child: Row(
-            //             spacing: 15,
-            //             children: [
-            //               Flexible(
-            //                 child: Text(
-            //                   "Country",
-            //                   textAlign: TextAlign.start,
-            //                   maxLines: 1,
-            //                   softWrap: false,
-            //                   overflow: TextOverflow.fade,
-            //                 ),
-            //               ),
-            //               Text("Points"),
-            //             ],
-            //           ),
-            //         ),
-            //       ],
-            //     ),
-            //   ),
-            // );
+            topCTFTeamsList.sort((b, a) {
+              return a['points'].compareTo(b['points']);
+            });
 
             for (int i = 0; i < topCTFTeamsList.length; i++) {
-              topCTFTeams.add(
+              topCTFTeamsList[i]['pos'] = i + 1;
+              if (topCTFTeamsList[i]['name'] == 'bi0s') {
+                _addListTile(
+                  estimateStatsList,
+                  Icons.public,
+                  "World Position",
+                  '${i + 1}',
+                );
+              }
+            }
+
+            for (int i = 0; i < topCTFTeamsList.length; i++) {
+              estimateRankingsList.add(
                 ListTile(
                   onTap: () {
                     showDialog(
@@ -1409,17 +1351,9 @@ class _HomePageState extends State<HomePage> {
                 ),
               );
             }
-
-            setState(() {
-              isStatsPageLoading = false;
-            });
           } else {
-            teamStatListItems.add(const Text('Cannot load URL!'));
-            teamTop10ListItems.add(const Text('Cannot load URL!'));
-            topCTFTeams.add(const Text('Cannot load URL!'));
-            setState(() {
-              isStatsPageLoading = false;
-            });
+            estimateRankingsList.add(const Text('Cannot load URL!'));
+            estimateStatsList.add(const Text('Cannot load URL!'));
           }
         }
         isTop10Score = 'cooking';
@@ -1433,7 +1367,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildCard(String title, Widget child, bool loadingCheck) {
     return Stack(
-      clipBehavior: Clip.none, // Allows the text to overflow the card's bounds
+      clipBehavior: Clip.none,
       children: [
         Card(
           shape: RoundedRectangleBorder(
@@ -1462,15 +1396,12 @@ class _HomePageState extends State<HomePage> {
                   : child,
         ),
         Positioned(
-          top: -5, // Adjust to sit on the border
-          left: 13, // Adjust horizontal position
+          top: -5,
+          left: 13,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 0),
             decoration: BoxDecoration(
-              color:
-                  Theme.of(
-                    context,
-                  ).scaffoldBackgroundColor, // Use scaffold background
+              color: Theme.of(context).scaffoldBackgroundColor,
               borderRadius: BorderRadius.circular(5.0),
             ),
             child: Text(
@@ -1483,41 +1414,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildCalcPointsCard(String title, Widget child) {
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14.0),
-        side: BorderSide(
-          width: 3,
-          color: Theme.of(context).colorScheme.primary,
-        ),
-      ),
-      shadowColor: Colors.white,
-      elevation: 3,
-      child:
-          isStatsPageLoading
-              ? ListView(
-                children: [
-                  ListTile(
-                    titleTextStyle: TextStyle(
-                      color: Colors.white,
-                      fontSize: 23,
-                    ),
-                    title: Text(title),
-                  ),
-                  const Divider(color: Colors.white, height: 3, thickness: 2),
-                  const Divider(
-                    color: Colors.transparent,
-                    height: 10,
-                    thickness: 0,
-                  ),
-                  Center(child: CircularProgressIndicator(color: Colors.white)),
-                ],
-              )
-              : child,
     );
   }
 
@@ -1689,12 +1585,6 @@ class _HomePageState extends State<HomePage> {
     final weightController = TextEditingController();
     final totalTeamsController = TextEditingController();
 
-    // @override
-    // void dispose() {
-    //   controller.dispose();
-    //   super.dispose();
-    // }
-
     calcctftimerating(teamRank, teamPoints, bestPoints, weight, totalTeams) {
       try {
         final pointsCoef = teamPoints / bestPoints;
@@ -1726,61 +1616,20 @@ class _HomePageState extends State<HomePage> {
     }
 
     void estimateRankingsAndStats() async {
+      estimateRankingsList.clear();
+      estimateStatsList.clear();
+
       setState(() {
-        calcPointsPageStatsWidget = Card(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14.0),
-            side: BorderSide(width: 3, color: Colors.white),
-          ),
-          shadowColor: Colors.white,
-          elevation: 3,
-          child: ListView(
-            children: [
-              ListTile(
-                titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
-                title: Text('Estimated Stats'),
-              ),
-              const Divider(color: Colors.white, height: 3, thickness: 2),
-              SizedBox(height: 40),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Flexible(
-                    child: CircularProgressIndicator(color: Colors.white),
-                  ),
-                ],
-              ),
-            ],
-          ),
+        calcPointsPageStatsWidget = _buildCard(
+          "Estimated Stats",
+          Text(''),
+          true,
         );
 
-        calcPointsPageRankingsWidget = Card(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14.0),
-            side: BorderSide(width: 3, color: Colors.white),
-          ),
-          shadowColor: Colors.white,
-          elevation: 3,
-          child: ListView(
-            children: [
-              ListTile(
-                titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
-                title: Text('Estimated Rankings'),
-              ),
-              const Divider(color: Colors.white, height: 3, thickness: 2),
-              SizedBox(height: 40),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Flexible(
-                    child: CircularProgressIndicator(color: Colors.white),
-                  ),
-                ],
-              ),
-            ],
-          ),
+        calcPointsPageRankingsWidget = _buildCard(
+          "Estimated Rankings",
+          Text(''),
+          true,
         );
       });
 
@@ -1788,21 +1637,10 @@ class _HomePageState extends State<HomePage> {
       String stats = await _getEstimatedData(foo);
       if (stats == 'skillissue') {
         setState(() {
-          calcPointsPageStatsWidget = Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14.0),
-              side: BorderSide(width: 3, color: Colors.white),
-            ),
-            shadowColor: Colors.white,
-            elevation: 3,
-            child: ListView(
+          calcPointsPageStatsWidget = _buildCard(
+            "Estimated Stats",
+            ListView(
               children: [
-                ListTile(
-                  titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
-                  title: Text('Estimated Stats'),
-                ),
-                const Divider(color: Colors.white, height: 3, thickness: 2),
-                SizedBox(height: 40),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -1817,23 +1655,13 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
+            false,
           );
 
-          calcPointsPageRankingsWidget = Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14.0),
-              side: BorderSide(width: 3, color: Colors.white),
-            ),
-            shadowColor: Colors.white,
-            elevation: 3,
-            child: ListView(
+          calcPointsPageRankingsWidget = _buildCard(
+            "Estimated Rankings",
+            ListView(
               children: [
-                ListTile(
-                  titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
-                  title: Text('Estimated Rankings'),
-                ),
-                const Divider(color: Colors.white, height: 3, thickness: 2),
-                SizedBox(height: 40),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -1848,39 +1676,39 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
+            false,
           );
         });
       } else if (stats == 'cooking') {
         setState(() {
-          calcPointsPageStatsWidget = Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14.0),
-              side: BorderSide(width: 3, color: Colors.white),
+          calcPointsPageStatsWidget = _buildCard(
+            'Estimated Stats',
+            ListView.builder(
+              padding: EdgeInsets.all(10),
+              itemCount: estimateStatsList.length,
+              itemBuilder: (context, index) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 6),
+                  child: estimateStatsList[index],
+                );
+              },
             ),
-            shadowColor: Colors.white,
-            elevation: 3,
-            child: ListView(
-              children: [
-                ListTile(
-                  titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
-                  title: Text('Estimated Stats'),
-                ),
-                const Divider(color: Colors.white, height: 3, thickness: 2),
-                SizedBox(height: 40),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        'Score is in Top 10! :)',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+            false,
+          );
+
+          calcPointsPageRankingsWidget = _buildCard(
+            'Estimated Rankings',
+            ListView.builder(
+              padding: EdgeInsets.all(10),
+              itemCount: estimateRankingsList.length,
+              itemBuilder: (context, index) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 6),
+                  child: estimateRankingsList[index],
+                );
+              },
             ),
+            false,
           );
         });
       }
