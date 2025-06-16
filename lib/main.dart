@@ -587,10 +587,13 @@ class _HomePageState extends State<HomePage> {
         'div.container > table.table.table-striped > tbody > tr > td > a',
         ['href'],
       )) {
-        activeCTFList.add({
-          "name": element['title'],
-          "link": element['attributes']['href'],
-        });
+        if (element['title'] != "*" &&
+            (element['attributes']['href'].toString().contains('/event'))) {
+          activeCTFList.add({
+            "name": element['title'],
+            'link': element['attributes']['href'],
+          });
+        }
       }
 
       final ctfDetails = webScraper.getElement(
