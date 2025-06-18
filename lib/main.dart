@@ -729,7 +729,7 @@ class _HomePageState extends State<HomePage> {
               borderRadius: BorderRadius.circular(14.0),
             ),
             tileColor: Colors.teal.shade900,
-            titleTextStyle: TextStyle(color: Colors.white, fontSize: 16),
+            titleTextStyle: TextStyle(color: Colors.white, fontSize: 14),
             title: Row(
               spacing: 8,
               children: [
@@ -762,194 +762,147 @@ class _HomePageState extends State<HomePage> {
         );
       }
 
-      // scrape past ctf events
-      if (await webScraper.loadWebPage(
-        '/event/list/?year=$year&online=-1&format=0&restrictions=-1&archive=true',
-      )) {
-        List<Map> pastCTFList = [];
-
-        int pos = 0;
-        for (var element in webScraper.getElement(
-          'div.container > table.table.table-striped > tbody > tr > td > a',
-          ['href'],
-        )) {
-          if (element['title'] != "*" &&
-              (element['attributes']['href'].toString().contains('/event')) &&
-              pos < 10) {
-            pastCTFList.add({
-              "name": element['title'],
-              "link": element['attributes']['href'],
-            });
-            pos++;
-          }
-        }
-
-        final pastCTFDetails = webScraper.getElement(
-          'div.container > table.table.table-striped > tbody > tr > td',
-          [],
+      // scrape for bi0s's past ctfs
+      List<Map> pastCTFList = [];
+      try {
+        final response = await http.get(
+          Uri.parse('https://ctftime.org/team/662'),
         );
 
-        pos = 0;
-        for (int i = 1; i < pastCTFDetails.length; i += 7) {
-          if (pos == pastCTFList.length) {
-            break;
-          } else {
-            pastCTFList[pos]['startDateTime'] =
-                pastCTFDetails[i]['title'].split('—')[0];
-            String endDateTime =
-                pastCTFDetails[i]['title'].split('—')[1].toString();
-            endDateTime = endDateTime.replaceRange(
-              endDateTime.length - 16,
-              endDateTime.length - 11,
-              '',
-            );
-            pastCTFList[pos]['endDateTime'] = endDateTime;
-            pastCTFList[pos]['format'] = pastCTFDetails[i + 1]['title'];
-            pastCTFList[pos]['location'] = pastCTFDetails[i + 2]['title']
-                .toString()
-                .replaceAll('\n', '');
-            pastCTFList[pos]['ctfRating'] = pastCTFDetails[i + 3]['title'];
-            pos++;
+        if (response.statusCode == 200) {
+          final document = htmlParser.parse(response.body);
+          final pageElements = document.getElementsByClassName(
+            'tab-pane.active',
+          );
+          for (var element in pageElements) {
+            if (element.attributes['id'] == 'rating_$year') {
+              if (element.children.length == 3) {
+                final pastCTFTableElement = element.children[2].children[0];
+                for (var ctf in pastCTFTableElement.children.skip(1)) {
+                  Map tempCtfDetails = {};
+                  tempCtfDetails["position"] = ctf.children[1].text;
+                  tempCtfDetails["name"] = ctf.children[2].children[0].text;
+                  tempCtfDetails["link"] =
+                      ctf.children[2].children[0].attributes['href'];
+                  tempCtfDetails["points"] = ctf.children[4].text;
+                  pastCTFList.add(tempCtfDetails);
+                }
+              }
+            }
+          }
+        } else {
+          for (int i = 0; i < 50; i++) {
+            pastCTFList.add({"Could not fetch data :/": ""});
           }
         }
+      } catch (e) {
+        for (int i = 0; i < 50; i++) {
+          pastCTFList.add({"Could not fetch data :/": ""});
+        }
+      }
 
-        // pastCTFListItems.add(
-        //   ListTile(
-        //     titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
-        //     title: Text("Past 10 CTFs"),
-        //   ),
-        // );
+      pastCTFListItems.add(
+        const Divider(color: Colors.transparent, height: 5, thickness: 0),
+      );
+      for (var element in pastCTFList) {
         pastCTFListItems.add(
-          const Divider(color: Colors.transparent, height: 5, thickness: 0),
-        );
-        for (var element in pastCTFList) {
-          pastCTFListItems.add(
-            ListTile(
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return SimpleDialog(
-                      backgroundColor: Colors.teal.shade900,
-                      title: Text(
-                        element['name'].toString(),
-                        textAlign: TextAlign.start,
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.fade,
-                      ),
-                      children: <Widget>[
-                        SimpleDialogOption(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text("Starts:"),
-                              Flexible(
-                                child: Text(
-                                  element['startDateTime'],
-                                  textAlign: TextAlign.end,
-                                  maxLines: 2,
-                                  softWrap: true,
-                                  overflow: TextOverflow.fade,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SimpleDialogOption(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Ends:'),
-                              Flexible(
-                                child: Text(
-                                  element['endDateTime'],
-                                  textAlign: TextAlign.end,
-                                  maxLines: 2,
-                                  softWrap: true,
-                                  overflow: TextOverflow.fade,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SimpleDialogOption(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Format:'),
-                              Text(element["format"]),
-                            ],
-                          ),
-                        ),
-                        SimpleDialogOption(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Location:'),
-                              Text('${element["location"]}'),
-                            ],
-                          ),
-                        ),
-                        SimpleDialogOption(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Rating:'),
-                              Text('${element["ctfRating"]} pts'),
-                            ],
-                          ),
-                        ),
-                        SimpleDialogOption(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('CTFtime:'),
-                              ElevatedButton(
-                                onPressed: () {
-                                  openURL(
-                                    "https://ctftime.org${element['link']}",
-                                  );
-                                },
-                                child: Text("Click here!"),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14.0),
-              ),
-              tileColor: Colors.teal.shade900,
-              titleTextStyle: TextStyle(color: Colors.white, fontSize: 16),
-              title: Row(
-                spacing: 8,
-                children: [
-                  Flexible(
-                    child: Text(
-                      element['name'],
+          ListTile(
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return SimpleDialog(
+                    backgroundColor: Colors.teal.shade900,
+                    title: Text(
+                      element['name'].toString(),
                       textAlign: TextAlign.start,
                       maxLines: 1,
                       softWrap: false,
                       overflow: TextOverflow.fade,
                     ),
-                  ),
-                ],
-              ),
-              // trailing widget is causing some issue
-              // bloop
-              // trailing: Text('${element['ctfRating']} pts'),
-              // subtitle: Text(
-              //   'Click to Show more!',
-              //   style: TextStyle(color: Colors.white70, fontSize: 10),
-              // ),
+                    children: <Widget>[
+                      SimpleDialogOption(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Position:'),
+                            Text('${element["position"]}'),
+                          ],
+                        ),
+                      ),
+                      SimpleDialogOption(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Points:'),
+                            Text('${element["points"]} pts'),
+                          ],
+                        ),
+                      ),
+                      SimpleDialogOption(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('CTFtime:'),
+                            ElevatedButton(
+                              onPressed: () {
+                                openURL(
+                                  "https://ctftime.org${element['link']}",
+                                );
+                              },
+                              child: Text("Click here!"),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14.0),
             ),
-          );
-        }
+            titleTextStyle: TextStyle(color: Colors.white70, fontSize: 12),
+            tileColor: Colors.teal.shade900,
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              spacing: 7,
+              children: [
+                Flexible(
+                  child: Row(
+                    spacing: 6,
+                    children: [
+                      Text(
+                        element["position"],
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                      Flexible(
+                        child: Text(
+                          style: TextStyle(color: Colors.white, fontSize: 14),
+                          element['name'],
+                          textAlign: TextAlign.start,
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.fade,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Row(
+                  spacing: 10,
+                  children: [
+                    Text(
+                      '${element["points"]} pts',
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
       }
 
       // scrape upcoming ctf events
@@ -1027,7 +980,7 @@ class _HomePageState extends State<HomePage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text("Started:"),
+                              Text("Starts:"),
                               Flexible(
                                 child: Text(
                                   element['startDateTime'],
@@ -1044,7 +997,7 @@ class _HomePageState extends State<HomePage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Ended:'),
+                              Text('Ends:'),
                               Flexible(
                                 child: Text(
                                   element['endDateTime'],
@@ -1337,7 +1290,7 @@ class _HomePageState extends State<HomePage> {
             _addListTile(
               estimateStatsList,
               Icons.star,
-              "Team Points",
+              "Estimated Points",
               (teamPoints + double.parse(recievedPoints)).toStringAsFixed(3),
             );
 
@@ -1621,7 +1574,7 @@ class _HomePageState extends State<HomePage> {
                   Expanded(
                     child: SizedBox.expand(
                       child: _buildCard(
-                        'Past 10 CTFs',
+                        'CTFs We Played',
                         ListView.builder(
                           padding: EdgeInsets.all(5),
                           itemCount: pastCTFListItems.length,
@@ -1772,6 +1725,7 @@ class _HomePageState extends State<HomePage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      SizedBox(height: 40),
                       Flexible(
                         child: Text(
                           'Score is not in Top 10! :/',
@@ -1793,6 +1747,7 @@ class _HomePageState extends State<HomePage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      SizedBox(height: 40),
                       Flexible(
                         child: Text(
                           'Score is not in Top 10! :/',
