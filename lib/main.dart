@@ -873,10 +873,10 @@ class _HomePageState extends State<HomePage> {
                   child: Row(
                     spacing: 6,
                     children: [
-                      Text(
-                        element["position"],
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
+                      // Text(
+                      //   element["position"],
+                      //   style: TextStyle(color: Colors.white70, fontSize: 12),
+                      // ),
                       Flexible(
                         child: Text(
                           style: TextStyle(color: Colors.white, fontSize: 14),
@@ -1616,14 +1616,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  final List<String> ongoingCTFList = [
-    'Option 1',
-    'Option 2',
-    'Option 3',
-    'Option 4',
-  ];
-  String? selectedItem;
-
   Widget _buildCTFPointsCalcPage() {
     final formKey = GlobalKey<FormState>();
     final teamRankController = TextEditingController();
@@ -1631,6 +1623,7 @@ class _HomePageState extends State<HomePage> {
     final bestPointsController = TextEditingController();
     final weightController = TextEditingController();
     final totalTeamsController = TextEditingController();
+    bool isDataLoading = true;
 
     calcctftimerating(teamRank, teamPoints, bestPoints, weight, totalTeams) {
       try {
@@ -1644,6 +1637,111 @@ class _HomePageState extends State<HomePage> {
         }
       } catch (e) {
         return 'Invalid Values Provided!';
+      }
+    }
+
+    void _showCTFWeightsPopup() async {
+      List<Widget> activeCTFDialogOptions = <Widget>[];
+      String year = DateTime.now().year.toString();
+
+      showSelectionDialog() {
+        showDialog(
+          context: context,
+          builder: (_) {
+            return SimpleDialog(
+              backgroundColor: Colors.teal.shade900,
+              title: Text(
+                'Choose from Active CTFs'.toString(),
+                textAlign: TextAlign.start,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.fade,
+              ),
+              children:
+                  // isDataLoading
+                  //     ? [
+                  //       SimpleDialogOption(
+                  //         child: Row(
+                  //           mainAxisAlignment: MainAxisAlignment.center,
+                  //           children: [
+                  //             CircularProgressIndicator(color: Colors.white),
+                  //           ],
+                  //         ),
+                  //       ),
+                  //     ]
+                  //     : activeCTFDialogOptions,
+                  activeCTFDialogOptions,
+            );
+          },
+        );
+      }
+
+      showSelectionDialog();
+
+      final webScraper = WebScraper('https://ctftime.org');
+      if (await webScraper.loadWebPage(
+        '/event/list/?year=$year&online=-1&format=0&restrictions=-1&now=true',
+      )) {
+        setState(() {
+          // Navigator.of(context).pop();
+          isDataLoading = false;
+        });
+        // scrape now running ctfs
+        List<Map> activeCTFList = [];
+        for (var element in webScraper.getElement(
+          'div.container > table.table.table-striped > tbody > tr > td > a',
+          ['href'],
+        )) {
+          if (element['title'] != "*" &&
+              (element['attributes']['href'].toString().contains('/event'))) {
+            activeCTFList.add({"name": element['title']});
+          }
+        }
+
+        final ctfDetails = webScraper.getElement(
+          'div.container > table.table.table-striped > tbody > tr > td',
+          [],
+        );
+
+        int pos = 0;
+        for (int i = 1; i < ctfDetails.length; i += 7) {
+          activeCTFList[pos]['ctfRating'] = ctfDetails[i + 3]['title'];
+          pos++;
+        }
+
+        for (var element in activeCTFList) {
+          activeCTFDialogOptions.add(
+            SimpleDialogOption(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Text(
+                      element['name'],
+                      textAlign: TextAlign.end,
+                      maxLines: 2,
+                      softWrap: true,
+                      overflow: TextOverflow.fade,
+                    ),
+                  ),
+                  Text(element['ctfRating']),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      print('hi');
+                    },
+                    child: Text('Select'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        setState(() {
+          activeCTFDialogOptions = activeCTFDialogOptions;
+        });
+
+        // showSelectionDialog();
       }
     }
 
@@ -1932,6 +2030,7 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
             Row(
+              spacing: 6,
               children: [
                 Flexible(
                   child: TextFormField(
@@ -1959,6 +2058,16 @@ class _HomePageState extends State<HomePage> {
                       return null;
                     },
                   ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    backgroundColor: Colors.teal.shade900,
+                  ),
+                  onPressed: _showCTFWeightsPopup,
+                  child: Text("Choose"),
                 ),
               ],
             ),
@@ -1993,25 +2102,7 @@ class _HomePageState extends State<HomePage> {
       ),
     );
 
-    DropdownButton ctfDropdown = DropdownButton<String>(
-      value: selectedItem,
-      hint: Text(selectedItem ?? ""),
-      items:
-          ongoingCTFList.map((String item) {
-            return DropdownMenuItem<String>(value: item, child: Text(item));
-          }).toList(),
-      onChanged: (String? newValue) {
-        setState(() {
-          selectedItem = newValue;
-        });
-      },
-    );
-
-    List<Widget> calcPointItems = [
-      const SizedBox(),
-      // ctfDropdown,
-      calcForm,
-    ];
+    List<Widget> calcPointItems = [const SizedBox(), calcForm];
 
     return Padding(
       padding: EdgeInsets.all(6),
@@ -2061,15 +2152,16 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildAboutPage() {
     List<ListTile> aboutListItems = [];
-    int eastereggCountdown = 0;
+    int eastereggCountdown1 = 0;
+    int eastereggCountdown2 = 0;
 
     aboutListItems.add(
       ListTile(
         onTap: () async {
-          eastereggCountdown++;
-          if (eastereggCountdown == 7) {
+          eastereggCountdown1++;
+          if (eastereggCountdown1 == 7) {
             openURL('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
-            eastereggCountdown = 0;
+            eastereggCountdown1 = 0;
           }
         },
         shape: RoundedRectangleBorder(
@@ -2111,12 +2203,12 @@ class _HomePageState extends State<HomePage> {
     aboutListItems.add(
       ListTile(
         onTap: () async {
-          eastereggCountdown++;
-          if (eastereggCountdown == 7) {
+          eastereggCountdown2++;
+          if (eastereggCountdown2 == 7) {
             openURL(
               'https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcRcKwYU7J96QuZNKxtcl0TbCHm-fkdT5wXwj-1i4l0XFMlhDpux',
             );
-            eastereggCountdown = 0;
+            eastereggCountdown2 = 0;
           }
         },
         shape: RoundedRectangleBorder(
