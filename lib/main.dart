@@ -79,6 +79,14 @@ class _HomePageState extends State<HomePage> {
   bool isCTFDetailsPageLoading = true;
   bool isCheckingUpdate = false;
 
+  final formKey = GlobalKey<FormState>();
+  final pointsRecievedController = TextEditingController();
+  final teamRankController = TextEditingController();
+  final teamPointsController = TextEditingController();
+  final bestPointsController = TextEditingController();
+  final weightController = TextEditingController();
+  final totalTeamsController = TextEditingController();
+
   List<Widget> teamStatListItems = [];
   List<Widget> teamTop10ListItems = [];
   List<Widget> topCTFTeams = [];
@@ -1460,6 +1468,30 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
+        (title.toLowerCase() == 'calculate points')
+            ? Positioned(
+              top: -6,
+              right: 15,
+              child: SizedBox(
+                child: IconButton(
+                  onPressed: () {
+                    pointsRecievedController.clear();
+                    teamRankController.clear();
+                    teamPointsController.clear();
+                    bestPointsController.clear();
+                    weightController.clear();
+                    totalTeamsController.clear();
+                  },
+                  constraints: BoxConstraints(maxHeight: 36, maxWidth: 36),
+                  icon: Icon(Icons.block, size: 23),
+                  padding: EdgeInsets.zero,
+                  style: IconButton.styleFrom(
+                    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                  ),
+                ),
+              ),
+            )
+            : const SizedBox.shrink(),
       ],
     );
   }
@@ -1617,14 +1649,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildCTFPointsCalcPage() {
-    final formKey = GlobalKey<FormState>();
-    final teamRankController = TextEditingController();
-    final teamPointsController = TextEditingController();
-    final bestPointsController = TextEditingController();
-    final weightController = TextEditingController();
-    final totalTeamsController = TextEditingController();
-    bool isDataLoading = true;
-
     calcctftimerating(teamRank, teamPoints, bestPoints, weight, totalTeams) {
       try {
         final pointsCoef = teamPoints / bestPoints;
@@ -1640,136 +1664,32 @@ class _HomePageState extends State<HomePage> {
       }
     }
 
-    void _showCTFWeightsPopup() async {
-      List<Widget> activeCTFDialogOptions = <Widget>[];
-      String year = DateTime.now().year.toString();
-
-      showSelectionDialog() {
-        showDialog(
-          context: context,
-          builder: (_) {
-            return SimpleDialog(
-              backgroundColor: Colors.teal.shade900,
-              title: Text(
-                'Choose from Active CTFs'.toString(),
-                textAlign: TextAlign.start,
-                maxLines: 1,
-                softWrap: false,
-                overflow: TextOverflow.fade,
-              ),
-              children:
-                  // isDataLoading
-                  //     ? [
-                  //       SimpleDialogOption(
-                  //         child: Row(
-                  //           mainAxisAlignment: MainAxisAlignment.center,
-                  //           children: [
-                  //             CircularProgressIndicator(color: Colors.white),
-                  //           ],
-                  //         ),
-                  //       ),
-                  //     ]
-                  //     : activeCTFDialogOptions,
-                  activeCTFDialogOptions,
-            );
-          },
-        );
-      }
-
-      showSelectionDialog();
-
-      final webScraper = WebScraper('https://ctftime.org');
-      if (await webScraper.loadWebPage(
-        '/event/list/?year=$year&online=-1&format=0&restrictions=-1&now=true',
-      )) {
-        setState(() {
-          // Navigator.of(context).pop();
-          isDataLoading = false;
-        });
-        // scrape now running ctfs
-        List<Map> activeCTFList = [];
-        for (var element in webScraper.getElement(
-          'div.container > table.table.table-striped > tbody > tr > td > a',
-          ['href'],
-        )) {
-          if (element['title'] != "*" &&
-              (element['attributes']['href'].toString().contains('/event'))) {
-            activeCTFList.add({"name": element['title']});
-          }
-        }
-
-        final ctfDetails = webScraper.getElement(
-          'div.container > table.table.table-striped > tbody > tr > td',
-          [],
-        );
-
-        int pos = 0;
-        for (int i = 1; i < ctfDetails.length; i += 7) {
-          activeCTFList[pos]['ctfRating'] = ctfDetails[i + 3]['title'];
-          pos++;
-        }
-
-        for (var element in activeCTFList) {
-          activeCTFDialogOptions.add(
-            SimpleDialogOption(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Text(
-                      element['name'],
-                      textAlign: TextAlign.end,
-                      maxLines: 2,
-                      softWrap: true,
-                      overflow: TextOverflow.fade,
-                    ),
-                  ),
-                  Text(element['ctfRating']),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      print('hi');
-                    },
-                    child: Text('Select'),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-        setState(() {
-          activeCTFDialogOptions = activeCTFDialogOptions;
-        });
-
-        // showSelectionDialog();
-      }
-    }
-
-    void submitPointsCalcForm() {
-      if (formKey.currentState!.validate()) {
-        final pointsRecieved = calcctftimerating(
-          double.parse(teamRankController.text),
-          double.parse(teamPointsController.text),
-          double.parse(bestPointsController.text),
-          double.parse(weightController.text),
-          double.parse(totalTeamsController.text),
-        );
-        if (pointsRecieved == 'Invalid Values Provided!') {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('$pointsRecieved')));
-          return;
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Team will recieve: ${pointsRecieved.toStringAsFixed(3)} pts!',
-            ),
-          ),
-        );
-      }
-    }
+    // void submitPointsCalcForm() {
+    //   if (formKey.currentState!.validate()) {
+    //     final pointsRecieved = calcctftimerating(
+    //       double.parse(teamRankController.text),
+    //       double.parse(teamPointsController.text),
+    //       double.parse(bestPointsController.text),
+    //       double.parse(weightController.text),
+    //       double.parse(totalTeamsController.text),
+    //     );
+    //     if (pointsRecieved == 'Invalid Values Provided!') {
+    //       ScaffoldMessenger.of(
+    //         context,
+    //       ).showSnackBar(SnackBar(content: Text('$pointsRecieved')));
+    //       return;
+    //     }
+    //     pointsRecievedController.text =
+    //         "${pointsRecieved.toStringAsFixed(3)} pts";
+    //     ScaffoldMessenger.of(context).showSnackBar(
+    //       SnackBar(
+    //         content: Text(
+    //           'Team will recieve: ${pointsRecieved.toStringAsFixed(3)} pts!',
+    //         ),
+    //       ),
+    //     );
+    //   }
+    // }
 
     void estimateRankingsAndStats() async {
       if (formKey.currentState!.validate()) {
@@ -1786,6 +1706,9 @@ class _HomePageState extends State<HomePage> {
           ).showSnackBar(SnackBar(content: Text('$pointsRecieved')));
           return;
         }
+
+        pointsRecievedController.text =
+            "${pointsRecieved.toStringAsFixed(3)} pts";
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1823,7 +1746,7 @@ class _HomePageState extends State<HomePage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      SizedBox(height: 40),
+                      SizedBox(height: 80),
                       Flexible(
                         child: Text(
                           'Score is not in Top 10! :/',
@@ -1845,7 +1768,7 @@ class _HomePageState extends State<HomePage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      SizedBox(height: 40),
+                      SizedBox(height: 80),
                       Flexible(
                         child: Text(
                           'Score is not in Top 10! :/',
@@ -1902,6 +1825,29 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           spacing: 7,
           children: [
+            Row(
+              children: [
+                Flexible(
+                  child: TextFormField(
+                    controller: pointsRecievedController,
+                    decoration: InputDecoration(
+                      labelText: 'Points Recieved',
+                      labelStyle: TextStyle(color: Colors.white60),
+                      errorBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: const Color(0xFFCF6679)),
+                      ),
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Colors.greenAccent,
+                          width: 5.0,
+                        ),
+                      ),
+                    ),
+                    enabled: false,
+                  ),
+                ),
+              ],
+            ),
             Row(
               children: [
                 Flexible(
@@ -2059,31 +2005,21 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                 ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    backgroundColor: Colors.teal.shade900,
-                  ),
-                  onPressed: _showCTFWeightsPopup,
-                  child: Text("Choose"),
-                ),
               ],
             ),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal.shade900,
-                    ),
-                    onPressed: submitPointsCalcForm,
-                    child: Text('Check Points'),
-                  ),
-                ),
-              ],
-            ),
+            // Row(
+            //   children: [
+            //     Expanded(
+            //       child: ElevatedButton(
+            //         style: ElevatedButton.styleFrom(
+            //           backgroundColor: Colors.teal.shade900,
+            //         ),
+            //         onPressed: submitPointsCalcForm,
+            //         child: Text('Check Points'),
+            //       ),
+            //     ),
+            //   ],
+            // ),
             Row(
               children: [
                 Expanded(
