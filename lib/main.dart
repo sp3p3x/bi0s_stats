@@ -271,13 +271,15 @@ class _HomePageState extends State<HomePage> {
       );
       _addListTile(teamStatListItems, Icons.star, "Team Points", teamPoints);
 
-      final ctfRating = webScraper.getElement(
-        'div.container > table.table.table-striped > tbody > tr > td',
-        [],
-      );
+      if (await webScraper.loadWebPage('/ctf/31')) {
+        final ctfRating = webScraper.getElement(
+          'div.container > table.table.table-striped > tbody > tr > td',
+          [],
+        );
 
-      if (ctfRating.isNotEmpty) {
-        String bi0sCTFRating = ctfRating[3]['title'].toString();
+        String bi0sCTFRating =
+            ctfRating.isNotEmpty ? ctfRating[1]['title'].toString() : "N/A";
+
         _addListTile(
           teamStatListItems,
           Icons.star,
@@ -285,9 +287,15 @@ class _HomePageState extends State<HomePage> {
           bi0sCTFRating,
         );
       } else {
-        _addListTile(teamStatListItems, Icons.star, "bi0sCTF Rating", "N/A");
+        _addListTile(
+          teamStatListItems,
+          Icons.star,
+          "bi0sCTF Rating",
+          "Failed to fetch",
+        );
       }
 
+      await webScraper.loadWebPage('/team/662'); // HOTFIX, PLS FIX LATER (TODO) - br34d
       // scrape top 10 scores
       List<Map> allCTFScores = [];
 
