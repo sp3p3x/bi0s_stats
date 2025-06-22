@@ -1468,30 +1468,6 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
-        (title.toLowerCase() == 'calculate points')
-            ? Positioned(
-              top: -6,
-              right: 15,
-              child: SizedBox(
-                child: IconButton(
-                  onPressed: () {
-                    pointsRecievedController.clear();
-                    teamRankController.clear();
-                    teamPointsController.clear();
-                    bestPointsController.clear();
-                    weightController.clear();
-                    totalTeamsController.clear();
-                  },
-                  constraints: BoxConstraints(maxHeight: 36, maxWidth: 36),
-                  icon: Icon(Icons.block, size: 23),
-                  padding: EdgeInsets.zero,
-                  style: IconButton.styleFrom(
-                    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                  ),
-                ),
-              ),
-            )
-            : const SizedBox.shrink(),
       ],
     );
   }
@@ -2029,6 +2005,26 @@ class _HomePageState extends State<HomePage> {
                     ),
                     onPressed: estimateRankingsAndStats,
                     child: Text('Estimate Stats'),
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal.shade900,
+                    ),
+                    onPressed: () {
+                      pointsRecievedController.clear();
+                      teamRankController.clear();
+                      teamPointsController.clear();
+                      bestPointsController.clear();
+                      weightController.clear();
+                      totalTeamsController.clear();
+                    },
+                    child: Text('Clear Inputs'),
                   ),
                 ),
               ],
