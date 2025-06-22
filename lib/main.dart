@@ -295,7 +295,9 @@ class _HomePageState extends State<HomePage> {
         );
       }
 
-      await webScraper.loadWebPage('/team/662'); // HOTFIX, PLS FIX LATER (TODO) - br34d
+      await webScraper.loadWebPage(
+        '/team/662',
+      ); // HOTFIX, PLS FIX LATER (TODO) - br34d
       // scrape top 10 scores
       List<Map> allCTFScores = [];
 
@@ -2282,12 +2284,21 @@ class _HomePageState extends State<HomePage> {
           SnackBar snackbar = SnackBar(content: Text(''));
           if (updateCheckResult == 'available') {
             snackbar = SnackBar(
-              content: Text('Update Available!'),
-              action: SnackBarAction(
-                label: 'Check it out!',
-                onPressed: () {
-                  openURL('http://github.com/sp3p3x/bi0s_stats');
-                },
+              content: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Update Available!'),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.black,
+                    ),
+                    onPressed: () {
+                      openURL('http://github.com/sp3p3x/bi0s_stats');
+                    },
+                    child: Text('Check it out!'),
+                  ),
+                ],
               ),
             );
           } else if (updateCheckResult == 'unavailable') {
