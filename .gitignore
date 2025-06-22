@@ -1,3 +1,9 @@
+.gitignore
+pswd.txt
+upload-keystore.jks
+builds/
+misc/store listing/
+
 # Miscellaneous
 *.class
 *.log
@@ -5,7 +11,6 @@
 *.swp
 .DS_Store
 .atom/
-builds/
 .build/
 .buildlog/
 .history
