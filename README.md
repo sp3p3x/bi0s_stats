@@ -4,7 +4,7 @@
 
 App to check live stats for [team bi0s](bi0s.in).
 
-Huge thanks to [Anikait](https://github.com/br34dcrumb) for helping out with the process.
+Huge thanks to [Anikait](https://github.com/br34dcrumb) for helping out with his contributions.
 
 ## Install
 
