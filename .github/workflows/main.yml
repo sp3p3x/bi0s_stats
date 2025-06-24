@@ -6,36 +6,47 @@ on:
 jobs:
   build:
     name: Build & Release
-    runs-on: ubuntu-latest 
+    runs-on: ubuntu-latest
     steps:
-       
-       - name: Checkout Repository
-         uses: actions/checkout@v3
-       
-       - name: Set Up Java
-         uses: actions/setup-java@v3.12.0
-         with:
-           distribution: 'oracle'
-           java-version: '17'
-       
-       - name: Set Up Flutter
-         uses: subosito/flutter-action@v2
-         with:
-           flutter-version: '3.29.2'
-           channel: 'stable'
-       
-       - name: Install Dependencies
-         run: flutter pub get
-       
-       - name: Build APK
-         run: flutter build apk --release
-        
-       - name: Rename APK
-         run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/bi0s_stats.apk
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-       - name: Upload Artifacts
-         uses: actions/upload-artifact@v4
-         with:
-           name: Releases
-           path: |
-             build/app/outputs/flutter-apk/bi0s_stats.apk
+      - name: Set Up Java
+        uses: actions/setup-java@v3.12.0
+        with:
+          distribution: "oracle"
+          java-version: "17"
+
+      - name: Set Up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.29.2"
+          channel: "stable"
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Get key props data
+        run: |
+          echo $KEYPROPSDATA > android/key.properties
+        env:
+          KEYPROPSDATA: ${{ secrets.KEYPROPSDATA }}
+
+      - name: Get key store data
+        run: |
+          echo -n $KEYSTOREDATA | base64 -d -o ./upload-keystore.jks
+        env:
+          KEYSTOREDATA: ${{ secrets.KEYSTOREDATA }}
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Rename APK
+        run: mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/bi0s_stats.apk
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Releases
+          path: |
+            build/app/outputs/flutter-apk/bi0s_stats.apk
