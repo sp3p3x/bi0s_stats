@@ -28,7 +28,7 @@ jobs:
 
       - name: Get key props data
         run: |
-          echo $KEYPROPSDATA > android/key.properties
+          echo $KEYPROPSDATA > ./android/key.properties
         env:
           KEYPROPSDATA: ${{ secrets.KEYPROPSDATA }}
 
