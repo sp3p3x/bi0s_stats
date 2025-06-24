@@ -2294,7 +2294,7 @@ class _HomePageState extends State<HomePage> {
                       backgroundColor: Colors.black,
                     ),
                     onPressed: () {
-                      openURL('http://github.com/sp3p3x/bi0s_stats');
+                      openURL('https://github.com/sp3p3x/bi0s_stats/releases');
                     },
                     child: Text('Check it out!'),
                   ),
