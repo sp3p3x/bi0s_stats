@@ -34,7 +34,7 @@ jobs:
 
       - name: Get key store data
         run: |
-          echo -n $KEYSTOREDATA | base64 -d -o ./upload-keystore.jks
+          echo -n $KEYSTOREDATA | base64 -d > ./upload-keystore.jks
         env:
           KEYSTOREDATA: ${{ secrets.KEYSTOREDATA }}
 
