@@ -79,7 +79,6 @@ class _HomePageState extends State<HomePage> {
   bool isStatsPageLoading = true;
   bool isCTFDetailsPageLoading = true;
   bool isCheckingUpdate = false;
-  bool showCalendar = false;
 
   final formKey = GlobalKey<FormState>();
   final pointsRecievedController = TextEditingController();
@@ -2112,13 +2111,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildCalendarPage() {
-    // tried adding a webview or an iframe to show the google calendar
-    // but no cross platform solution to do it. hence going back to the
-    // ooga booga method of urllaunch to open on host browser :')
-    return Center();
-  }
-
   Widget _buildAboutPage() {
     List<ListTile> aboutListItems = [];
     int eastereggCountdown1 = 0;
@@ -2436,7 +2428,6 @@ class _HomePageState extends State<HomePage> {
       _buildCTFDetailsPage(),
       _buildCTFPointsCalcPage(),
       _buildAboutPage(),
-      _buildCalendarPage(),
     ];
 
     return Scaffold(
@@ -2463,10 +2454,10 @@ class _HomePageState extends State<HomePage> {
                 : (_selectedIndex == 1)
                 ? [
                   IconButton(
-                    onPressed: () {
-                      setState(() {
-                        showCalendar = true;
-                      });
+                    onPressed: () async {
+                      openURL(
+                        'https://calendar.google.com/calendar/u/0/embed?showTitle=0&showNav=0&showPrint=0&showCalendars=0&height=600&wkst=2&src=ctftime@gmail.com&ctz=Asia/Kolkata&bgcolor=%23212121&color=%23a5d6a7',
+                      );
                     },
                     iconSize: 30,
                     icon: Icon(Icons.calendar_month),
@@ -2517,16 +2508,12 @@ class _HomePageState extends State<HomePage> {
         unselectedItemColor: Theme.of(context).colorScheme.tertiary,
         onTap: _onItemTapped,
       ),
-      body:
-          (showCalendar && _selectedIndex == 1)
-              ? Center(child: pages.elementAt(4))
-              : Center(child: pages.elementAt(_selectedIndex)),
+      body: Center(child: pages.elementAt(_selectedIndex)),
     );
   }
 
   void _onItemTapped(int index) {
     setState(() {
-      showCalendar = false;
       _selectedIndex = index;
     });
   }
