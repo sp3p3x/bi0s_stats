@@ -2113,6 +2113,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildCalendarPage() {
+    // tried adding a webview or an iframe to show the google calendar
+    // but no cross platform solution to do it. hence going back to the
+    // ooga booga method of urllaunch to open on host browser :')
     return Center();
   }
 
