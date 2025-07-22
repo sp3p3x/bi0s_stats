@@ -4,6 +4,7 @@ import 'package:web_scraper/web_scraper.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as htmlParser;
+import 'package:intl/intl.dart';
 
 void main() {
   runApp(const Bi0sStatsApp());
@@ -78,6 +79,7 @@ class _HomePageState extends State<HomePage> {
   bool isStatsPageLoading = true;
   bool isCTFDetailsPageLoading = true;
   bool isCheckingUpdate = false;
+  bool showCalendar = false;
 
   final formKey = GlobalKey<FormState>();
   final pointsRecievedController = TextEditingController();
@@ -97,6 +99,24 @@ class _HomePageState extends State<HomePage> {
 
   List<Widget> estimateStatsList = [];
   List<Widget> estimateRankingsList = [];
+
+  String convertUtcToIst(String utcTimeString) {
+    DateTime utcDateTime = DateTime.parse(utcTimeString).toUtc();
+    DateTime istDateTime = utcDateTime.add(Duration(hours: 5, minutes: 30));
+    String istTimeString = DateFormat(
+      'yyyy-MM-dd HH:mm:ss',
+    ).format(istDateTime);
+
+    return istTimeString;
+  }
+
+  void timezonetest() {
+    String utcTime = "2025-07-18T12:00:00Z"; // Example UTC time
+    String istTime = convertUtcToIst(utcTime);
+    print("IST Time: $istTime");
+  }
+
+  void test() {}
 
   Widget calcPointsPageStatsWidget = Stack(
     clipBehavior: Clip.none,
@@ -2092,10 +2112,55 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildCalendarPage() {
+    return Center();
+  }
+
   Widget _buildAboutPage() {
     List<ListTile> aboutListItems = [];
     int eastereggCountdown1 = 0;
     int eastereggCountdown2 = 0;
+
+    aboutListItems.add(
+      ListTile(
+        onTap: () async {
+          test();
+        },
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14.0),
+        ),
+        tileColor: Colors.teal.shade900,
+        leading: Icon(Icons.person, size: 25, color: Colors.white70),
+        titleTextStyle: TextStyle(color: Colors.white, fontSize: 16),
+        title: Row(
+          children: [
+            Flexible(
+              child: Text(
+                "Developed by Yadhu Krishna K, for team bi0s",
+                textAlign: TextAlign.start,
+                maxLines: 2,
+                softWrap: true,
+                overflow: TextOverflow.fade,
+              ),
+            ),
+          ],
+        ),
+        subtitle: Row(
+          children: [
+            Flexible(
+              child: Text(
+                "@sp3p3x",
+                style: TextStyle(color: Colors.white70),
+                textAlign: TextAlign.start,
+                maxLines: 2,
+                softWrap: true,
+                overflow: TextOverflow.fade,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
 
     aboutListItems.add(
       ListTile(
@@ -2368,6 +2433,7 @@ class _HomePageState extends State<HomePage> {
       _buildCTFDetailsPage(),
       _buildCTFPointsCalcPage(),
       _buildAboutPage(),
+      _buildCalendarPage(),
     ];
 
     return Scaffold(
@@ -2393,6 +2459,15 @@ class _HomePageState extends State<HomePage> {
                 ]
                 : (_selectedIndex == 1)
                 ? [
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        showCalendar = true;
+                      });
+                    },
+                    iconSize: 30,
+                    icon: Icon(Icons.calendar_month),
+                  ),
                   IconButton(
                     onPressed: () {
                       setState(() {
@@ -2439,12 +2514,16 @@ class _HomePageState extends State<HomePage> {
         unselectedItemColor: Theme.of(context).colorScheme.tertiary,
         onTap: _onItemTapped,
       ),
-      body: Center(child: pages.elementAt(_selectedIndex)),
+      body:
+          (showCalendar && _selectedIndex == 1)
+              ? Center(child: pages.elementAt(4))
+              : Center(child: pages.elementAt(_selectedIndex)),
     );
   }
 
   void _onItemTapped(int index) {
     setState(() {
+      showCalendar = false;
       _selectedIndex = index;
     });
   }
