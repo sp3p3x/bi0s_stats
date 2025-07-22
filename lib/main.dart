@@ -1282,7 +1282,8 @@ class _HomePageState extends State<HomePage> {
             for (int i = 0; i < topCTFTeamsList.length; i++) {
               if (topCTFTeamsList[i]['name'] == 'bi0s') {
                 topCTFTeamsList[i]['points'] = (teamPoints +
-                        double.parse(recievedPoints))
+                        double.parse(recievedPoints) -
+                        allCTFScores[9]['points'])
                     .toStringAsFixed(3);
               }
             }
@@ -1328,7 +1329,10 @@ class _HomePageState extends State<HomePage> {
               estimateStatsList,
               Icons.star,
               "Estimated Points",
-              (teamPoints + double.parse(recievedPoints)).toStringAsFixed(3),
+              (teamPoints +
+                      double.parse(recievedPoints) -
+                      allCTFScores[9]['points'])
+                  .toStringAsFixed(3),
             );
 
             for (int i = 0; i < topCTFTeamsList.length; i++) {
