@@ -270,10 +270,17 @@ class _HomePageState extends State<HomePage> {
         "$year-${monthToInt[splitEndDateTime[2]]}-${splitEndDateTime[1]}T${splitEndDateTime[4]}:00Z";
     String startTimeIST = convertUtcToIst(utcStartTime);
     String endTimeIST = convertUtcToIst(utcEndTime);
+    String startDay = DateFormat.EEEE()
+        .format(DateTime.parse(startTimeIST))
+        .substring(0, 3);
+    String endDay = DateFormat.EEEE()
+        .format(DateTime.parse(endTimeIST))
+        .substring(0, 3);
     startTimeIST =
-        "${startTimeIST.substring(8, 10)} ${monthToInt.keys.toList()[int.parse(startTimeIST.substring(5, 7)) - 1]}, ${startTimeIST.substring(11, 16)} IST";
+        "${startTimeIST.substring(8, 10)} ${monthToInt.keys.toList()[int.parse(startTimeIST.substring(5, 7)) - 1]}, $startDay, ${startTimeIST.substring(11, 16)} IST";
     endTimeIST =
-        "${endTimeIST.substring(8, 10)} ${monthToInt.keys.toList()[int.parse(endTimeIST.substring(5, 7)) - 1]}, ${endTimeIST.substring(11, 16)} IST";
+        "${endTimeIST.substring(8, 10)} ${monthToInt.keys.toList()[int.parse(endTimeIST.substring(5, 7)) - 1]}, $endDay, ${endTimeIST.substring(11, 16)} IST";
+
     return [startTimeIST, endTimeIST];
   }
 
@@ -2126,6 +2133,47 @@ class _HomePageState extends State<HomePage> {
 
     aboutListItems.add(
       ListTile(
+        onTap: () {
+          openURL('https://bi0s.in');
+        },
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14.0),
+        ),
+        tileColor: Colors.teal.shade900,
+        leading: Icon(Icons.flag, size: 25, color: Colors.white70),
+        titleTextStyle: TextStyle(color: Colors.white, fontSize: 16),
+        title: Row(
+          children: [
+            Flexible(
+              child: Text(
+                "Team bi0s",
+                textAlign: TextAlign.start,
+                maxLines: 2,
+                softWrap: true,
+                overflow: TextOverflow.fade,
+              ),
+            ),
+          ],
+        ),
+        subtitle: Row(
+          children: [
+            Flexible(
+              child: Text(
+                "bi0s.in",
+                style: TextStyle(color: Colors.white70),
+                textAlign: TextAlign.start,
+                maxLines: 2,
+                softWrap: true,
+                overflow: TextOverflow.fade,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    aboutListItems.add(
+      ListTile(
         onTap: () async {
           eastereggCountdown1++;
           if (eastereggCountdown1 == 7) {
@@ -2143,7 +2191,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             Flexible(
               child: Text(
-                "Developed by Yadhu Krishna K, for team bi0s",
+                "Developed by Yadhu Krishna K",
                 textAlign: TextAlign.start,
                 maxLines: 2,
                 softWrap: true,
@@ -2298,84 +2346,86 @@ class _HomePageState extends State<HomePage> {
       ),
     );
 
-    aboutListItems.add(
-      ListTile(
-        onTap: () async {
-          setState(() {
-            isCheckingUpdate = true;
-          });
-          String updateCheckResult = await checkForUpdates();
-          setState(() {
-            isCheckingUpdate = false;
-          });
-          SnackBar snackbar = SnackBar(content: Text(''));
-          if (updateCheckResult == 'available') {
-            snackbar = SnackBar(
-              content: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Update Available!'),
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Colors.black,
-                    ),
-                    onPressed: () {
-                      openURL('https://github.com/sp3p3x/bi0s_stats/releases');
-                    },
-                    child: Text('Check it out!'),
-                  ),
-                ],
-              ),
-            );
-          } else if (updateCheckResult == 'unavailable') {
-            snackbar = SnackBar(
-              content: Text('You already have the latest version!'),
-            );
-          } else if (updateCheckResult == "failed") {
-            snackbar = SnackBar(content: Text('Failed to fetch update!'));
-          }
-          ScaffoldMessenger.of(context).showSnackBar(snackbar);
-        },
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14.0),
-        ),
-        tileColor: Colors.teal.shade900,
-        leading:
-            isCheckingUpdate
-                ? CircularProgressIndicator(color: Colors.white)
-                : Icon(Icons.update, size: 25, color: Colors.white70),
-        titleTextStyle: TextStyle(color: Colors.white, fontSize: 16),
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Flexible(
-              child: Text(
-                "Check for updates",
-                textAlign: TextAlign.start,
-                maxLines: 2,
-                softWrap: true,
-                overflow: TextOverflow.fade,
-              ),
-            ),
-          ],
-        ),
-        subtitle: Row(
-          children: [
-            Flexible(
-              child: Text(
-                "Click here to check for updates!",
-                style: TextStyle(color: Colors.white70),
-                textAlign: TextAlign.start,
-                maxLines: 2,
-                softWrap: true,
-                overflow: TextOverflow.fade,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    // have to fix the part where playstore needs diff format of versioning for pubspec
+    // and it doesn't match the apps version we check from the inside of the app itself with.
+    // aboutListItems.add(
+    //   ListTile(
+    //     onTap: () async {
+    //       setState(() {
+    //         isCheckingUpdate = true;
+    //       });
+    //       String updateCheckResult = await checkForUpdates();
+    //       setState(() {
+    //         isCheckingUpdate = false;
+    //       });
+    //       SnackBar snackbar = SnackBar(content: Text(''));
+    //       if (updateCheckResult == 'available') {
+    //         snackbar = SnackBar(
+    //           content: Row(
+    //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    //             children: [
+    //               Text('Update Available!'),
+    //               TextButton(
+    //                 style: TextButton.styleFrom(
+    //                   foregroundColor: Colors.white,
+    //                   backgroundColor: Colors.black,
+    //                 ),
+    //                 onPressed: () {
+    //                   openURL('https://github.com/sp3p3x/bi0s_stats/releases');
+    //                 },
+    //                 child: Text('Check it out!'),
+    //               ),
+    //             ],
+    //           ),
+    //         );
+    //       } else if (updateCheckResult == 'unavailable') {
+    //         snackbar = SnackBar(
+    //           content: Text('You already have the latest version!'),
+    //         );
+    //       } else if (updateCheckResult == "failed") {
+    //         snackbar = SnackBar(content: Text('Failed to fetch update!'));
+    //       }
+    //       ScaffoldMessenger.of(context).showSnackBar(snackbar);
+    //     },
+    //     shape: RoundedRectangleBorder(
+    //       borderRadius: BorderRadius.circular(14.0),
+    //     ),
+    //     tileColor: Colors.teal.shade900,
+    //     leading:
+    //         isCheckingUpdate
+    //             ? CircularProgressIndicator(color: Colors.white)
+    //             : Icon(Icons.update, size: 25, color: Colors.white70),
+    //     titleTextStyle: TextStyle(color: Colors.white, fontSize: 16),
+    //     title: Row(
+    //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    //       children: [
+    //         Flexible(
+    //           child: Text(
+    //             "Check for updates",
+    //             textAlign: TextAlign.start,
+    //             maxLines: 2,
+    //             softWrap: true,
+    //             overflow: TextOverflow.fade,
+    //           ),
+    //         ),
+    //       ],
+    //     ),
+    //     subtitle: Row(
+    //       children: [
+    //         Flexible(
+    //           child: Text(
+    //             "Click here to check for updates!",
+    //             style: TextStyle(color: Colors.white70),
+    //             textAlign: TextAlign.start,
+    //             maxLines: 2,
+    //             softWrap: true,
+    //             overflow: TextOverflow.fade,
+    //           ),
+    //         ),
+    //       ],
+    //     ),
+    //   ),
+    // );
 
     return ListView.builder(
       padding: EdgeInsets.all(5),
