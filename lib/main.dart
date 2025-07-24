@@ -79,6 +79,20 @@ class _HomePageState extends State<HomePage> {
   bool isStatsPageLoading = true;
   bool isCTFDetailsPageLoading = true;
   bool isCheckingUpdate = false;
+  Map<String, String> monthToInt = {
+    "Jan.": "01",
+    "Feb.": "02",
+    "March": "03",
+    "April": "04",
+    "May": "05",
+    "June": "06",
+    "July": "07",
+    "Aug.": "08",
+    "Sept.": "09",
+    "Oct.": "10",
+    "Nov.": "11",
+    "Dec.": "12",
+  };
 
   final formKey = GlobalKey<FormState>();
   final pointsRecievedController = TextEditingController();
@@ -98,24 +112,6 @@ class _HomePageState extends State<HomePage> {
 
   List<Widget> estimateStatsList = [];
   List<Widget> estimateRankingsList = [];
-
-  String convertUtcToIst(String utcTimeString) {
-    DateTime utcDateTime = DateTime.parse(utcTimeString).toUtc();
-    DateTime istDateTime = utcDateTime.add(Duration(hours: 5, minutes: 30));
-    String istTimeString = DateFormat(
-      'yyyy-MM-dd HH:mm:ss',
-    ).format(istDateTime);
-
-    return istTimeString;
-  }
-
-  void timezonetest() {
-    String utcTime = "2025-07-18T12:00:00Z"; // Example UTC time
-    String istTime = convertUtcToIst(utcTime);
-    print("IST Time: $istTime");
-  }
-
-  void test() {}
 
   Widget calcPointsPageStatsWidget = Stack(
     clipBehavior: Clip.none,
@@ -248,6 +244,37 @@ class _HomePageState extends State<HomePage> {
         trailing: Text(subtitle),
       ),
     );
+  }
+
+  String convertUtcToIst(String utcTimeString) {
+    DateTime utcDateTime = DateTime.parse(utcTimeString).toUtc();
+    DateTime istDateTime = utcDateTime.add(Duration(hours: 5, minutes: 30));
+    String istTimeString = DateFormat(
+      'yyyy-MM-dd HH:mm:ss',
+    ).format(istDateTime);
+
+    return istTimeString;
+  }
+
+  List<String> getStartEndTimeIST(String ctftimeDateTimeDetails) {
+    List splitDateTime = ctftimeDateTimeDetails.split('—');
+    String year = splitDateTime[1].substring(
+      splitDateTime[1].length - 15,
+      splitDateTime[1].length - 11,
+    );
+    List splitStartDateTime = splitDateTime[0].split(' ');
+    List splitEndDateTime = splitDateTime[1].split(' ');
+    String utcStartTime =
+        "$year-${monthToInt[splitStartDateTime[1].replaceAll(',', '')]}-${splitStartDateTime[0]}T${splitStartDateTime[2]}:00Z";
+    String utcEndTime =
+        "$year-${monthToInt[splitEndDateTime[2]]}-${splitEndDateTime[1]}T${splitEndDateTime[4]}:00Z";
+    String startTimeIST = convertUtcToIst(utcStartTime);
+    String endTimeIST = convertUtcToIst(utcEndTime);
+    startTimeIST =
+        "${startTimeIST.substring(8, 10)} ${monthToInt.keys.toList()[int.parse(startTimeIST.substring(5, 7)) - 1]}, ${startTimeIST.substring(11, 16)} IST";
+    endTimeIST =
+        "${endTimeIST.substring(8, 10)} ${monthToInt.keys.toList()[int.parse(endTimeIST.substring(5, 7)) - 1]}, ${endTimeIST.substring(11, 16)} IST";
+    return [startTimeIST, endTimeIST];
   }
 
   _getStats() async {
@@ -640,15 +667,9 @@ class _HomePageState extends State<HomePage> {
 
       int pos = 0;
       for (int i = 1; i < ctfDetails.length; i += 7) {
-        activeCTFList[pos]['startDateTime'] =
-            ctfDetails[i]['title'].split('—')[0];
-        String endDateTime = ctfDetails[i]['title'].split('—')[1].toString();
-        endDateTime = endDateTime.replaceRange(
-          endDateTime.length - 16,
-          endDateTime.length - 11,
-          '',
-        );
-        activeCTFList[pos]['endDateTime'] = endDateTime;
+        List startEndTimeIST = getStartEndTimeIST(ctfDetails[i]['title']);
+        activeCTFList[pos]['startDateTime'] = startEndTimeIST[0];
+        activeCTFList[pos]['endDateTime'] = startEndTimeIST[1];
         activeCTFList[pos]['format'] = ctfDetails[i + 1]['title'];
         activeCTFList[pos]['location'] = ctfDetails[i + 2]['title']
             .toString()
@@ -657,12 +678,6 @@ class _HomePageState extends State<HomePage> {
         pos++;
       }
 
-      // nowRunningCTFListItems.add(
-      //   ListTile(
-      //     titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
-      //     title: Text("Now Running"),
-      //   ),
-      // );
       nowRunningCTFListItems.add(
         const Divider(color: Colors.transparent, height: 5, thickness: 0),
       );
@@ -968,16 +983,11 @@ class _HomePageState extends State<HomePage> {
 
         pos = 0;
         for (int i = 1; i < upcomingCTFDetails.length; i += 7) {
-          upcomingCTFList[pos]['startDateTime'] =
-              upcomingCTFDetails[i]['title'].split('—')[0];
-          String endDateTime =
-              upcomingCTFDetails[i]['title'].split('—')[1].toString();
-          endDateTime = endDateTime.replaceRange(
-            endDateTime.length - 16,
-            endDateTime.length - 11,
-            '',
+          List startEndTimeIST = getStartEndTimeIST(
+            upcomingCTFDetails[i]['title'],
           );
-          upcomingCTFList[pos]['endDateTime'] = endDateTime;
+          upcomingCTFList[pos]['startDateTime'] = startEndTimeIST[0];
+          upcomingCTFList[pos]['endDateTime'] = startEndTimeIST[1];
           upcomingCTFList[pos]['format'] = upcomingCTFDetails[i + 1]['title'];
           upcomingCTFList[pos]['location'] = upcomingCTFDetails[i + 2]['title']
               .toString()
@@ -987,12 +997,6 @@ class _HomePageState extends State<HomePage> {
           pos++;
         }
 
-        // upcomingCTFListItems.add(
-        //   ListTile(
-        //     titleTextStyle: TextStyle(color: Colors.white, fontSize: 23),
-        //     title: Text("Upcoming CTFs"),
-        //   ),
-        // );
         upcomingCTFListItems.add(
           const Divider(color: Colors.transparent, height: 5, thickness: 0),
         );
@@ -2119,47 +2123,6 @@ class _HomePageState extends State<HomePage> {
     List<ListTile> aboutListItems = [];
     int eastereggCountdown1 = 0;
     int eastereggCountdown2 = 0;
-
-    aboutListItems.add(
-      ListTile(
-        onTap: () async {
-          test();
-        },
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14.0),
-        ),
-        tileColor: Colors.teal.shade900,
-        leading: Icon(Icons.person, size: 25, color: Colors.white70),
-        titleTextStyle: TextStyle(color: Colors.white, fontSize: 16),
-        title: Row(
-          children: [
-            Flexible(
-              child: Text(
-                "Developed by Yadhu Krishna K, for team bi0s",
-                textAlign: TextAlign.start,
-                maxLines: 2,
-                softWrap: true,
-                overflow: TextOverflow.fade,
-              ),
-            ),
-          ],
-        ),
-        subtitle: Row(
-          children: [
-            Flexible(
-              child: Text(
-                "@sp3p3x",
-                style: TextStyle(color: Colors.white70),
-                textAlign: TextAlign.start,
-                maxLines: 2,
-                softWrap: true,
-                overflow: TextOverflow.fade,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
 
     aboutListItems.add(
       ListTile(
