@@ -39,7 +39,7 @@ jobs:
           KEYSTOREDATA: ${{ secrets.KEYSTOREDATA }}
 
       - name: Change build.gradle to debug
-        run: cp android/app/github-action-build.gradle.kts android/app/build.gradle.kts
+        run: mv android/app/github-action-build.gradle.kts android/app/build.gradle.kts
 
       - name: Build APK
         run: flutter build apk --release
