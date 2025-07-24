@@ -14,7 +14,7 @@ Displays:
 -  Top 10 scores of the team which is used to calculate team points in ctftime.
 -  Top 50 teams from ctftime.
 -  Currently running CTFs, upcoming CTFs, past CTFs the team has played.
--  Calculate the amount points team will recieve from a CTF.
+-  Calculate the amount of points team will recieve from a CTF.
 -  Estimate stats and rankings with points recieved from a CTF.
 
 ## Install
@@ -42,5 +42,12 @@ Any suggestions, improvements, optimisations are welcome!
 2) Make the changes
 3) Send a PR
 ```
+
+## TODO
+ - Show bi0sctf rating in team stats (currently the bi0sctf weight is hardcoded url)
+ 	- current and future weights
+ 	- points recieved from bi0sctf
+ - Show previous year ranking in the "CTFs we played" section.
+ - Create builds for other platforms like web, mac, ios etc.
 
 *PS. The codebase is kinda wack and heavily unoptimised since it was cooked over a few overnights*
