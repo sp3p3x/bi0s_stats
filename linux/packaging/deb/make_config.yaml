@@ -1,0 +1,34 @@
+display_name: bi0s stats
+package_name: bi0s-stats
+
+maintainer:
+  name: sp3p3x
+  email: sp3p3x.dev@gmail.com
+
+priority: optional
+
+version: 1.0.3
+revision: 3
+
+installed_size: 50832
+
+section: x11
+
+essential: false
+
+icon: misc/logo/bi0s_stats_logo.png
+
+# postuninstall_scripts:
+#   - echo "Sorry to see you go."
+
+keywords:
+  - bi0s
+  - bi0s stats
+  - bi0s_stats
+
+generic_name: bi0s stats
+
+categories:
+  - Utility
+
+startup_notify: true

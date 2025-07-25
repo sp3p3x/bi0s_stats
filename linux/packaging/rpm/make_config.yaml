@@ -1,0 +1,25 @@
+display_name: bi0s stats
+summary: App to track team bi0s stats and CTF events.
+vendor: sp3p3x
+packager: sp3p3x
+packagerEmail: sp3p3x.dev@gmail.com
+build_arch: x86_64
+
+url: https://github.com/sp3p3x/bi0s_stats
+
+essential: false
+license: MIT
+
+icon: misc/logo/bi0s_stats_logo.png
+
+keywords:
+  - bi0s
+  - bi0s stats
+  - bi0s_stats
+
+generic_name: bi0s stats
+
+categories:
+  - Utility
+
+startup_notify: true
