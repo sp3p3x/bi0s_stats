@@ -3,6 +3,7 @@ pswd.txt
 upload-keystore.jks
 builds/
 misc/store listing/
+dist/
 
 # Miscellaneous
 *.class
